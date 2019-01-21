@@ -1,3 +1,7 @@
+pygpgme-0.3+lp1: 2019-01-21
+
+ * Link against libgpgme-pthread for thread-safety.
+
 pygpgme-0.3: 2012-03-08
 
  * Add support for Python 3 (tested with Python 3.2).  Data being

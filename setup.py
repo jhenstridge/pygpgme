@@ -22,12 +22,12 @@ gpgme = Extension(
      'src/pygpgme-constants.c',
      'src/pygpgme-genkey.c',
      ],
-    libraries=['gpgme'])
+    libraries=['gpgme-pthread', 'pthread'])
 
 description, long_description = __doc__.split("\n\n", 1)
 
 setup(name='pygpgme',
-      version='0.3',
+      version='0.3+lp1',
       author='James Henstridge',
       author_email='james@jamesh.id.au',
       description=description,
