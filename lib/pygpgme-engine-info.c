@@ -43,6 +43,7 @@ PyTypeObject PyGpgmeEngineInfo_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "gpgme.EngineInfo",
     sizeof(PyGpgmeEngineInfo),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_dealloc = (destructor)pygpgme_engine_info_dealloc,
     .tp_members = pygpgme_engine_info_members,
 };

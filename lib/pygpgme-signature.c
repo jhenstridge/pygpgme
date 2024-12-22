@@ -342,6 +342,7 @@ static PyGetSetDef pygpgme_sig_notation_getsets[] = {
     { "flags", (getter)pygpgme_sig_notation_get_flags, NULL, NULL },
     { "human_readable", (getter)pygpgme_sig_notation_get_human_readable, NULL, NULL },
     { "critical", (getter)pygpgme_sig_notation_get_critical, NULL, NULL },
+    { NULL, (getter)0, (setter)0 }
 };
 
 PyTypeObject PyGpgmeSigNotation_Type = {
