@@ -1,3 +1,8 @@
+pygpgme-0.6: 2024-12-22
+
+ * Fix missing NULL terminator on SigNotation getsets list, which
+   could cause a crash when importing the package.
+
 pygpgme-0.5: 2024-11-23
 
  * Require libgpgme >= 1.13.0.

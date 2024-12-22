@@ -28,7 +28,7 @@ All interaction begins by creating a Context.
 
 from gpgme._gpgme import *
 
-__version__ = '0.5'
+__version__ = '0.6'
 
 DATA_ENCODING_NONE = DataEncoding.NONE
 DATA_ENCODING_BINARY = DataEncoding.BINARY
