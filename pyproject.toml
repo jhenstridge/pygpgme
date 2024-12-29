@@ -60,15 +60,17 @@ disallow_untyped_calls = true
 disallow_untyped_decorators = true
 
 [tool.cibuildwheel]
-manylinux-x86_64-image = "manylinux_2_28"
-musllinux-x86_64-image = "musllinux_1_2"
-
+archs = ["auto64"]
 test-command = "python -m unittest discover -v -t {project} {project}/tests"
 
 [tool.cibuildwheel.linux]
-archs = ["auto64"]
-before-all = "yum install -y gpgme-devel"
+manylinux-x86_64-image = "manylinux_2_28"
+musllinux-x86_64-image = "musllinux_1_2"
+before-all = "dnf install -y gpgme-devel"
 
 [[tool.cibuildwheel.overrides]]
 select = "*-musllinux*"
 before-all = "apk add gpgme-dev"
+
+[tool.cibuildwheel.macos]
+before-all = "brew install gpgme"
