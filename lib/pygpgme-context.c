@@ -646,9 +646,10 @@ static const char pygpgme_context_get_engine_info_doc[] =
 static PyObject *
 pygpgme_context_get_engine_info(PyGpgmeContext *self)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     gpgme_engine_info_t info = gpgme_ctx_get_engine_info(self->ctx);
 
-    return pygpgme_engine_info_list_new(info);
+    return pygpgme_engine_info_list_new(state, info);
 }
 
 static const char pygpgme_context_set_locale_doc[] =
@@ -1913,6 +1914,10 @@ static PyType_Slot pygpgme_context_slots[] = {
 PyType_Spec pygpgme_context_spec = {
     .name = "gpgme.Context",
     .basicsize = sizeof(PyGpgmeContext),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT
+#if PY_VERSION_HEX >= 0x030a0000
+    | Py_TPFLAGS_IMMUTABLETYPE
+#endif
+    ,
     .slots = pygpgme_context_slots,
 };

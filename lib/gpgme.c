@@ -54,7 +54,6 @@ pygpgme_mod_exec(PyObject *mod) {
     Py_INCREF(&PyGpgme ## type ## _Type); \
     PyModule_AddObject(mod, #type, (PyObject *)&PyGpgme ## type ## _Type)
 
-    INIT_TYPE(PyGpgmeEngineInfo_Type);
     INIT_TYPE(PyGpgmeKey_Type);
     INIT_TYPE(PyGpgmeSubkey_Type);
     INIT_TYPE(PyGpgmeUserId_Type);
@@ -66,7 +65,6 @@ pygpgme_mod_exec(PyObject *mod) {
     INIT_TYPE(PyGpgmeGenkeyResult_Type);
     INIT_TYPE(PyGpgmeKeyIter_Type);
 
-    ADD_TYPE(EngineInfo);
     ADD_TYPE(Key);
     ADD_TYPE(Subkey);
     ADD_TYPE(UserId);
@@ -78,9 +76,16 @@ pygpgme_mod_exec(PyObject *mod) {
     ADD_TYPE(GenkeyResult);
     ADD_TYPE(KeyIter);
 
-    state->PyGpgmeContext_Type = PyType_FromModuleAndSpec(mod, &pygpgme_context_spec, NULL);
-    Py_INCREF(state->PyGpgmeContext_Type);
-    PyModule_AddObject(mod, "Context", state->PyGpgmeContext_Type);
+#undef INIT_TYPE
+#define INIT_TYPE(type, spec) \
+    state->PyGpgme##type##_Type = PyType_FromModuleAndSpec(mod, spec, NULL); \
+    if (!state->PyGpgme##type##_Type) \
+        return -1; \
+    Py_INCREF(state->PyGpgme##type##_Type); \
+    PyModule_AddObject(mod, #type, state->PyGpgme##type##_Type)
+
+    INIT_TYPE(Context, &pygpgme_context_spec);
+    INIT_TYPE(EngineInfo, &pygpgme_engine_info_spec);
 
     Py_INCREF(state->pygpgme_error);
     PyModule_AddObject(mod, "GpgmeError", state->pygpgme_error);
@@ -101,6 +106,7 @@ pygpgme_mod_traverse(PyObject *mod, visitproc visit, void *arg)
     PyGpgmeModState *state = PyModule_GetState(mod);
 
     Py_VISIT(state->PyGpgmeContext_Type);
+    Py_VISIT(state->PyGpgmeEngineInfo_Type);
     Py_VISIT(state->pygpgme_error);
     return 0;
 }
@@ -111,6 +117,7 @@ pygpgme_mod_clear(PyObject *mod)
     PyGpgmeModState *state = PyModule_GetState(mod);
 
     Py_CLEAR(state->PyGpgmeContext_Type);
+    Py_CLEAR(state->PyGpgmeEngineInfo_Type);
     Py_CLEAR(state->pygpgme_error);
     return 0;
 }

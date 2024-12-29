@@ -39,23 +39,34 @@ static PyMemberDef pygpgme_engine_info_members[] = {
     { NULL, 0, 0, 0}
 };
 
-PyTypeObject PyGpgmeEngineInfo_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "gpgme.EngineInfo",
-    sizeof(PyGpgmeEngineInfo),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_dealloc = (destructor)pygpgme_engine_info_dealloc,
-    .tp_members = pygpgme_engine_info_members,
+static PyType_Slot pygpgme_engine_info_slots[] = {
+#if PY_VERSION_HEX < 0x030a0000
+    { Py_tp_init, pygpgme_no_constructor },
+#endif
+    { Py_tp_dealloc, pygpgme_engine_info_dealloc },
+    { Py_tp_members, pygpgme_engine_info_members },
+    { 0, NULL },
+};
+
+PyType_Spec pygpgme_engine_info_spec = {
+    .name = "gpgme.EngineInfo",
+    .basicsize = sizeof(PyGpgmeEngineInfo),
+    .flags = Py_TPFLAGS_DEFAULT
+#if PY_VERSION_HEX >= 0x030a0000
+    | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE
+#endif
+    ,
+    .slots = pygpgme_engine_info_slots,
 };
 
 PyObject *
-pygpgme_engine_info_list_new(gpgme_engine_info_t info)
+pygpgme_engine_info_list_new(PyGpgmeModState *state, gpgme_engine_info_t info)
 {
     PyObject *list = PyList_New(0);
 
     for (; info != NULL; info = info->next) {
 	PyGpgmeEngineInfo *item = PyObject_New(PyGpgmeEngineInfo,
-					       &PyGpgmeEngineInfo_Type);
+					       (PyTypeObject *)state->PyGpgmeEngineInfo_Type);
 	if (item == NULL) {
 	    Py_DECREF(list);
 	    return NULL;
