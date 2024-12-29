@@ -1901,14 +1901,18 @@ static const char pygpgme_context_doc[] =
     "\n"
     "    ctx = gpgme.Context()\n";
 
-PyTypeObject PyGpgmeContext_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "gpgme.Context",
-    sizeof(PyGpgmeContext),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_dealloc = (destructor)pygpgme_context_dealloc,
-    .tp_init = (initproc)pygpgme_context_init,
-    .tp_getset = pygpgme_context_getsets,
-    .tp_methods = pygpgme_context_methods,
-    .tp_doc = pygpgme_context_doc,
+static PyType_Slot pygpgme_context_slots[] = {
+    { Py_tp_dealloc, pygpgme_context_dealloc },
+    { Py_tp_init, pygpgme_context_init },
+    { Py_tp_getset, pygpgme_context_getsets },
+    { Py_tp_methods, pygpgme_context_methods },
+    { Py_tp_doc, (void *)pygpgme_context_doc },
+    { 0, NULL },
+};
+
+PyType_Spec pygpgme_context_spec = {
+    .name = "gpgme.Context",
+    .basicsize = sizeof(PyGpgmeContext),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = pygpgme_context_slots,
 };

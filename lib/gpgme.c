@@ -21,25 +21,24 @@
 #include <Python.h>
 #include "pygpgme.h"
 
-static PyMethodDef pygpgme_functions[] = {
-    { NULL, NULL, 0 }
-};
-
-static PyModuleDef pygpgme_module = {
-    PyModuleDef_HEAD_INIT,
-    "gpgme._gpgme",
-    .m_size = -1,
-    .m_methods = pygpgme_functions
-};
-
-PyMODINIT_FUNC
-PyInit__gpgme(void)
+int
+pygpgme_no_constructor(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    PyErr_Format(PyExc_NotImplementedError,
+                 "can not directly create instances of %s",
+                 self->ob_type->tp_name);
+    return -1;
+}
+
+static int
+pygpgme_mod_exec(PyObject *mod) {
+    PyGpgmeModState *state = PyModule_GetState(mod);
     const char *gpgme_version;
-    PyObject *mod;
 
     pygpgme_error = PyErr_NewException("gpgme.GpgmeError",
                                        PyExc_RuntimeError, NULL);
+    Py_INCREF(pygpgme_error);
+    state->pygpgme_error = pygpgme_error;
 
 #define INIT_TYPE(type)                      \
     if (!Py_TYPE(&type))                     \
@@ -49,13 +48,12 @@ PyInit__gpgme(void)
     if (!type.tp_new && type.tp_init)        \
         type.tp_new = PyType_GenericNew;     \
     if (PyType_Ready(&type) < 0)             \
-        return NULL
+        return -1
 
 #define ADD_TYPE(type)                \
     Py_INCREF(&PyGpgme ## type ## _Type); \
     PyModule_AddObject(mod, #type, (PyObject *)&PyGpgme ## type ## _Type)
 
-    INIT_TYPE(PyGpgmeContext_Type);
     INIT_TYPE(PyGpgmeEngineInfo_Type);
     INIT_TYPE(PyGpgmeKey_Type);
     INIT_TYPE(PyGpgmeSubkey_Type);
@@ -68,9 +66,6 @@ PyInit__gpgme(void)
     INIT_TYPE(PyGpgmeGenkeyResult_Type);
     INIT_TYPE(PyGpgmeKeyIter_Type);
 
-    mod = PyModule_Create(&pygpgme_module);
-
-    ADD_TYPE(Context);
     ADD_TYPE(EngineInfo);
     ADD_TYPE(Key);
     ADD_TYPE(Subkey);
@@ -83,20 +78,82 @@ PyInit__gpgme(void)
     ADD_TYPE(GenkeyResult);
     ADD_TYPE(KeyIter);
 
-    Py_INCREF(pygpgme_error);
-    PyModule_AddObject(mod, "GpgmeError", pygpgme_error);
+    state->PyGpgmeContext_Type = PyType_FromModuleAndSpec(mod, &pygpgme_context_spec, NULL);
+    Py_INCREF(state->PyGpgmeContext_Type);
+    PyModule_AddObject(mod, "Context", state->PyGpgmeContext_Type);
+
+    Py_INCREF(state->pygpgme_error);
+    PyModule_AddObject(mod, "GpgmeError", state->pygpgme_error);
 
     pygpgme_add_constants(mod);
 
-    gpgme_version = gpgme_check_version("1.13.0");
-    if (gpgme_version == NULL) {
-        PyErr_SetString(PyExc_ImportError, "Unable to initialize gpgme.");
-        Py_DECREF(mod);
-        return NULL;
-    }
+    gpgme_version = gpgme_check_version(NULL);
     PyModule_AddObject(mod, "gpgme_version",
                        PyUnicode_DecodeASCII(gpgme_version,
                                              strlen(gpgme_version), "replace"));
 
-    return mod;
+    return 0;
+}
+
+static int
+pygpgme_mod_traverse(PyObject *mod, visitproc visit, void *arg)
+{
+    PyGpgmeModState *state = PyModule_GetState(mod);
+
+    Py_VISIT(state->PyGpgmeContext_Type);
+    Py_VISIT(state->pygpgme_error);
+    return 0;
+}
+
+static int
+pygpgme_mod_clear(PyObject *mod)
+{
+    PyGpgmeModState *state = PyModule_GetState(mod);
+
+    Py_CLEAR(state->PyGpgmeContext_Type);
+    Py_CLEAR(state->pygpgme_error);
+    return 0;
+}
+
+static void
+pygpgme_mod_free(PyObject *mod)
+{
+    pygpgme_mod_clear(mod);
+}
+
+static PyMethodDef pygpgme_mod_functions[] = {
+    { NULL, NULL, 0 },
+};
+
+static PyModuleDef_Slot pygpgme_mod_slots[] = {
+    {Py_mod_exec, pygpgme_mod_exec},
+#if PY_VERSION_HEX >= 0x030c0000
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+#endif
+    { 0, NULL },
+};
+
+static PyModuleDef pygpgme_module = {
+    PyModuleDef_HEAD_INIT,
+    "gpgme._gpgme",
+    .m_size = sizeof (PyGpgmeModState),
+    .m_methods = pygpgme_mod_functions,
+    .m_slots = pygpgme_mod_slots,
+    .m_traverse = (traverseproc)pygpgme_mod_traverse,
+    .m_clear = (inquiry)pygpgme_mod_clear,
+    .m_free = (freefunc)pygpgme_mod_free,
+};
+
+PyMODINIT_FUNC
+PyInit__gpgme(void)
+{
+    const char *gpgme_version;
+
+    gpgme_version = gpgme_check_version("1.13.0");
+    if (gpgme_version == NULL) {
+        PyErr_SetString(PyExc_ImportError, "Unable to initialize gpgme.");
+        return NULL;
+    }
+
+    return PyModuleDef_Init(&pygpgme_module);
 }

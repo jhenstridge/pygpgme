@@ -129,7 +129,6 @@ typedef struct {
 } PyGpgmeKeyIter;
 
 extern HIDDEN PyObject *pygpgme_error;
-extern HIDDEN PyTypeObject PyGpgmeContext_Type;
 extern HIDDEN PyTypeObject PyGpgmeEngineInfo_Type;
 extern HIDDEN PyTypeObject PyGpgmeKey_Type;
 extern HIDDEN PyTypeObject PyGpgmeSubkey_Type;
@@ -160,9 +159,19 @@ extern HIDDEN PyObject *PyGpgmeDelete_Type;
 extern HIDDEN PyObject *PyGpgmeErrSource_Type;
 extern HIDDEN PyObject *PyGpgmeErrCode_Type;
 
+extern HIDDEN PyType_Spec pygpgme_context_spec;
+
+typedef struct {
+    PyObject *PyGpgmeContext_Type;
+
+    PyObject *pygpgme_error;
+} PyGpgmeModState;
+
 HIDDEN int           pygpgme_check_error    (gpgme_error_t err);
 HIDDEN PyObject     *pygpgme_error_object   (gpgme_error_t err);
 HIDDEN gpgme_error_t pygpgme_check_pyerror  (void);
+HIDDEN int           pygpgme_no_constructor (PyObject *self, PyObject *args,
+                                             PyObject *kwargs);
 
 HIDDEN PyObject     *pygpgme_engine_info_list_new(gpgme_engine_info_t info);
 HIDDEN int           pygpgme_data_new       (gpgme_data_t *dh, PyObject *fp);
