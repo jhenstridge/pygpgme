@@ -129,16 +129,11 @@ typedef struct {
 } PyGpgmeKeyIter;
 
 extern HIDDEN PyObject *pygpgme_error;
-extern HIDDEN PyTypeObject PyGpgmeKey_Type;
-extern HIDDEN PyTypeObject PyGpgmeSubkey_Type;
-extern HIDDEN PyTypeObject PyGpgmeUserId_Type;
-extern HIDDEN PyTypeObject PyGpgmeKeySig_Type;
 extern HIDDEN PyTypeObject PyGpgmeNewSignature_Type;
 extern HIDDEN PyTypeObject PyGpgmeSignature_Type;
 extern HIDDEN PyTypeObject PyGpgmeSigNotation_Type;
 extern HIDDEN PyTypeObject PyGpgmeImportResult_Type;
 extern HIDDEN PyTypeObject PyGpgmeGenkeyResult_Type;
-extern HIDDEN PyTypeObject PyGpgmeKeyIter_Type;
 
 extern HIDDEN PyObject *PyGpgmeDataEncoding_Type;
 extern HIDDEN PyObject *PyGpgmePubkeyAlgo_Type;
@@ -160,10 +155,21 @@ extern HIDDEN PyObject *PyGpgmeErrCode_Type;
 
 extern HIDDEN PyType_Spec pygpgme_context_spec;
 extern HIDDEN PyType_Spec pygpgme_engine_info_spec;
+extern HIDDEN PyType_Spec pygpgme_key_spec;
+extern HIDDEN PyType_Spec pygpgme_subkey_spec;
+extern HIDDEN PyType_Spec pygpgme_user_id_spec;
+extern HIDDEN PyType_Spec pygpgme_key_sig_spec;
+extern HIDDEN PyType_Spec pygpgme_keyiter_spec;
+
 
 typedef struct {
     PyObject *PyGpgmeContext_Type;
     PyObject *PyGpgmeEngineInfo_Type;
+    PyObject *PyGpgmeKey_Type;
+    PyObject *PyGpgmeSubkey_Type;
+    PyObject *PyGpgmeUserId_Type;
+    PyObject *PyGpgmeKeySig_Type;
+    PyObject *PyGpgmeKeyIter_Type;
 
     PyObject *pygpgme_error;
 } PyGpgmeModState;
@@ -177,7 +183,8 @@ HIDDEN int           pygpgme_no_constructor (PyObject *self, PyObject *args,
 HIDDEN PyObject     *pygpgme_engine_info_list_new(PyGpgmeModState *state,
                                                   gpgme_engine_info_t info);
 HIDDEN int           pygpgme_data_new       (gpgme_data_t *dh, PyObject *fp);
-HIDDEN PyObject     *pygpgme_key_new        (gpgme_key_t key);
+HIDDEN PyObject     *pygpgme_key_new        (PyGpgmeModState *state,
+                                             gpgme_key_t key);
 HIDDEN PyObject     *pygpgme_newsiglist_new (gpgme_new_signature_t siglist);
 HIDDEN PyObject     *pygpgme_siglist_new    (gpgme_signature_t siglist);
 HIDDEN PyObject     *pygpgme_sig_notation_list_new (gpgme_sig_notation_t notations);

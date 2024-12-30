@@ -54,27 +54,17 @@ pygpgme_mod_exec(PyObject *mod) {
     Py_INCREF(&PyGpgme ## type ## _Type); \
     PyModule_AddObject(mod, #type, (PyObject *)&PyGpgme ## type ## _Type)
 
-    INIT_TYPE(PyGpgmeKey_Type);
-    INIT_TYPE(PyGpgmeSubkey_Type);
-    INIT_TYPE(PyGpgmeUserId_Type);
-    INIT_TYPE(PyGpgmeKeySig_Type);
     INIT_TYPE(PyGpgmeNewSignature_Type);
     INIT_TYPE(PyGpgmeSignature_Type);
     INIT_TYPE(PyGpgmeSigNotation_Type);
     INIT_TYPE(PyGpgmeImportResult_Type);
     INIT_TYPE(PyGpgmeGenkeyResult_Type);
-    INIT_TYPE(PyGpgmeKeyIter_Type);
 
-    ADD_TYPE(Key);
-    ADD_TYPE(Subkey);
-    ADD_TYPE(UserId);
-    ADD_TYPE(KeySig);
     ADD_TYPE(NewSignature);
     ADD_TYPE(Signature);
     ADD_TYPE(SigNotation);
     ADD_TYPE(ImportResult);
     ADD_TYPE(GenkeyResult);
-    ADD_TYPE(KeyIter);
 
 #undef INIT_TYPE
 #define INIT_TYPE(type, spec) \
@@ -86,6 +76,11 @@ pygpgme_mod_exec(PyObject *mod) {
 
     INIT_TYPE(Context, &pygpgme_context_spec);
     INIT_TYPE(EngineInfo, &pygpgme_engine_info_spec);
+    INIT_TYPE(Key, &pygpgme_key_spec);
+    INIT_TYPE(Subkey, &pygpgme_subkey_spec);
+    INIT_TYPE(UserId, &pygpgme_user_id_spec);
+    INIT_TYPE(KeySig, &pygpgme_key_sig_spec);
+    INIT_TYPE(KeyIter, &pygpgme_keyiter_spec);
 
     Py_INCREF(state->pygpgme_error);
     PyModule_AddObject(mod, "GpgmeError", state->pygpgme_error);
@@ -107,6 +102,11 @@ pygpgme_mod_traverse(PyObject *mod, visitproc visit, void *arg)
 
     Py_VISIT(state->PyGpgmeContext_Type);
     Py_VISIT(state->PyGpgmeEngineInfo_Type);
+    Py_VISIT(state->PyGpgmeKey_Type);
+    Py_VISIT(state->PyGpgmeSubkey_Type);
+    Py_VISIT(state->PyGpgmeUserId_Type);
+    Py_VISIT(state->PyGpgmeKeySig_Type);
+    Py_VISIT(state->PyGpgmeKeyIter_Type);
     Py_VISIT(state->pygpgme_error);
     return 0;
 }
@@ -118,6 +118,11 @@ pygpgme_mod_clear(PyObject *mod)
 
     Py_CLEAR(state->PyGpgmeContext_Type);
     Py_CLEAR(state->PyGpgmeEngineInfo_Type);
+    Py_CLEAR(state->PyGpgmeKey_Type);
+    Py_CLEAR(state->PyGpgmeSubkey_Type);
+    Py_CLEAR(state->PyGpgmeUserId_Type);
+    Py_CLEAR(state->PyGpgmeKeySig_Type);
+    Py_CLEAR(state->PyGpgmeKeyIter_Type);
     Py_CLEAR(state->pygpgme_error);
     return 0;
 }

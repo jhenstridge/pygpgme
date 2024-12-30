@@ -407,6 +407,7 @@ static const char pygpgme_context_signers_doc[] =
 static PyObject *
 pygpgme_context_get_signers(PyGpgmeContext *self)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *list, *tuple;
     gpgme_key_t key;
     int i;
@@ -416,7 +417,7 @@ pygpgme_context_get_signers(PyGpgmeContext *self)
          key != NULL; key = gpgme_signers_enum(self->ctx, ++i)) {
         PyObject *item;
 
-        item = pygpgme_key_new(key);
+        item = pygpgme_key_new(state, key);
         gpgme_key_unref(key);
         if (item == NULL) {
             Py_DECREF(list);
@@ -433,6 +434,7 @@ pygpgme_context_get_signers(PyGpgmeContext *self)
 static int
 pygpgme_context_set_signers(PyGpgmeContext *self, PyObject *value)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *signers = NULL;
     int i, length, ret = 0;
 
@@ -452,7 +454,7 @@ pygpgme_context_set_signers(PyGpgmeContext *self, PyObject *value)
     for (i = 0; i < length; i++) {
         PyObject *item = PySequence_Fast_GET_ITEM(signers, i);
 
-        if (!PyObject_TypeCheck(item, &PyGpgmeKey_Type)) {
+        if (!PyObject_TypeCheck(item, (PyTypeObject *)state->PyGpgmeKey_Type)) {
             PyErr_SetString(PyExc_TypeError,
                             "signers must be a sequence of keys");
             ret = -1;
@@ -688,6 +690,7 @@ static const char pygpgme_context_get_key_doc[] =
 static PyObject *
 pygpgme_context_get_key(PyGpgmeContext *self, PyObject *args)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     const char *fpr;
     int secret = 0;
     gpgme_error_t err;
@@ -704,7 +707,7 @@ pygpgme_context_get_key(PyGpgmeContext *self, PyObject *args)
     if (pygpgme_check_error(err))
         return NULL;
 
-    ret = pygpgme_key_new(key);
+    ret = pygpgme_key_new(state, key);
     gpgme_key_unref(key);
     return ret;
 }
@@ -775,6 +778,7 @@ static const char pygpgme_context_encrypt_doc[] =
 static PyObject *
 pygpgme_context_encrypt(PyGpgmeContext *self, PyObject *args)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *py_recp, *py_plain, *py_cipher, *recp_seq = NULL, *result = NULL;
     int flags, i, length;
     gpgme_key_t *recp = NULL;
@@ -796,7 +800,7 @@ pygpgme_context_encrypt(PyGpgmeContext *self, PyObject *args)
         for (i = 0; i < length; i++) {
             PyObject *item = PySequence_Fast_GET_ITEM(recp_seq, i);
 
-            if (!PyObject_TypeCheck(item, &PyGpgmeKey_Type)) {
+            if (!PyObject_TypeCheck(item, (PyTypeObject *)state->PyGpgmeKey_Type)) {
                 PyErr_SetString(PyExc_TypeError, "items in first argument "
                                 "must be gpgme.Key objects");
                 goto end;
@@ -811,7 +815,8 @@ pygpgme_context_encrypt(PyGpgmeContext *self, PyObject *args)
     if (pygpgme_data_new(&cipher, py_cipher))
         goto end;
 
-    Py_BEGIN_ALLOW_THREADS;    err = gpgme_op_encrypt(self->ctx, recp, flags, plain, cipher);
+    Py_BEGIN_ALLOW_THREADS;
+    err = gpgme_op_encrypt(self->ctx, recp, flags, plain, cipher);
     Py_END_ALLOW_THREADS;
 
     if (pygpgme_check_error(err)) {
@@ -861,6 +866,7 @@ static const char pygpgme_context_encrypt_sign_doc[] =
 static PyObject *
 pygpgme_context_encrypt_sign(PyGpgmeContext *self, PyObject *args)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *py_recp, *py_plain, *py_cipher, *recp_seq = NULL, *result = NULL;
     int flags, i, length;
     gpgme_key_t *recp = NULL;
@@ -881,7 +887,7 @@ pygpgme_context_encrypt_sign(PyGpgmeContext *self, PyObject *args)
     for (i = 0; i < length; i++) {
         PyObject *item = PySequence_Fast_GET_ITEM(recp_seq, i);
 
-        if (!PyObject_TypeCheck(item, &PyGpgmeKey_Type)) {
+        if (!PyObject_TypeCheck(item, (PyTypeObject *)state->PyGpgmeKey_Type)) {
             PyErr_SetString(PyExc_TypeError, "items in first argument "
                             "must be gpgme.Key objects");
             goto end;
@@ -1369,6 +1375,7 @@ static const char pygpgme_context_import_keys_doc[] =
 static PyObject *
 pygpgme_context_import_keys(PyGpgmeContext *self, PyObject *args)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *py_keys, *seq = NULL, *result = NULL;
     gpgme_key_t *keys = NULL;
     int i, length;
@@ -1386,7 +1393,7 @@ pygpgme_context_import_keys(PyGpgmeContext *self, PyObject *args)
     for (i = 0; i < length; i++) {
         PyObject *item = PySequence_Fast_GET_ITEM(seq, i);
 
-        if (!PyObject_TypeCheck(item, &PyGpgmeKey_Type)) {
+        if (!PyObject_TypeCheck(item, (PyTypeObject *)state->PyGpgmeKey_Type)) {
             PyErr_SetString(PyExc_TypeError,
                             "keys must be a sequence of key objects");
             goto out;
@@ -1560,6 +1567,7 @@ static const char pygpgme_context_export_keys_doc[] =
 static PyObject *
 pygpgme_context_export_keys(PyGpgmeContext *self, PyObject *args)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *py_keys, *py_keydata, *seq = NULL, *ret = NULL;
     gpgme_key_t *keys = NULL;
     int i, length, export_mode = 0;
@@ -1578,7 +1586,7 @@ pygpgme_context_export_keys(PyGpgmeContext *self, PyObject *args)
     for (i = 0; i < length; i++) {
         PyObject *item = PySequence_Fast_GET_ITEM(seq, i);
 
-        if (!PyObject_TypeCheck(item, &PyGpgmeKey_Type)) {
+        if (!PyObject_TypeCheck(item, (PyTypeObject *)state->PyGpgmeKey_Type)) {
             PyErr_SetString(PyExc_TypeError,
                             "keys must be a sequence of key objects");
             goto out;
@@ -1697,11 +1705,12 @@ static const char pygpgme_context_delete_doc[] =
 static PyObject *
 pygpgme_context_delete(PyGpgmeContext *self, PyObject *args)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyGpgmeKey *key;
     unsigned int flags = 0;
     gpgme_error_t err;
 
-    if (!PyArg_ParseTuple(args, "O!|I", &PyGpgmeKey_Type, &key, &flags))
+    if (!PyArg_ParseTuple(args, "O!|I", state->PyGpgmeKey_Type, &key, &flags))
         return NULL;
 
     Py_BEGIN_ALLOW_THREADS;
@@ -1739,12 +1748,13 @@ static const char pygpgme_context_edit_doc[] =
 static PyObject *
 pygpgme_context_edit(PyGpgmeContext *self, PyObject *args)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyGpgmeKey *key;
     PyObject *callback, *py_out;
     gpgme_data_t out;
     gpgme_error_t err;
 
-    if (!PyArg_ParseTuple(args, "O!OO", &PyGpgmeKey_Type, &key, &callback,
+    if (!PyArg_ParseTuple(args, "O!OO", state->PyGpgmeKey_Type, &key, &callback,
                           &py_out))
         return NULL;
 
@@ -1772,12 +1782,13 @@ static const char pygpgme_context_card_edit_doc[] =
 static PyObject *
 pygpgme_context_card_edit(PyGpgmeContext *self, PyObject *args)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyGpgmeKey *key;
     PyObject *callback, *py_out;
     gpgme_data_t out;
     gpgme_error_t err;
 
-    if (!PyArg_ParseTuple(args, "O!OO", &PyGpgmeKey_Type, &key, &callback,
+    if (!PyArg_ParseTuple(args, "O!OO", state->PyGpgmeKey_Type, &key, &callback,
                           &py_out))
         return NULL;
 
@@ -1817,6 +1828,7 @@ static const char pygpgme_context_keylist_doc[] =
 static PyObject *
 pygpgme_context_keylist(PyGpgmeContext *self, PyObject *args)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *py_pattern = Py_None;
     char **patterns = NULL;
     int secret_only = 0;
@@ -1841,7 +1853,7 @@ pygpgme_context_keylist(PyGpgmeContext *self, PyObject *args)
         return NULL;
 
     /* return a KeyIter object */
-    ret = PyObject_New(PyGpgmeKeyIter, &PyGpgmeKeyIter_Type);
+    ret = PyObject_New(PyGpgmeKeyIter, (PyTypeObject *)state->PyGpgmeKeyIter_Type);
     if (!ret)
         return NULL;
     Py_INCREF(self);
