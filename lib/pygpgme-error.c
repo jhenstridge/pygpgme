@@ -17,13 +17,10 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <Python.h>
 #include "pygpgme.h"
 
-PyObject *pygpgme_error = NULL;
-
 PyObject *
-pygpgme_error_object(gpgme_error_t err)
+pygpgme_error_object(PyGpgmeModState *state, gpgme_error_t err)
 {
     char buf[256] = { '\0' };
     PyObject *exc = NULL, *source = NULL, *code = NULL, *strerror = NULL;
@@ -43,7 +40,7 @@ pygpgme_error_object(gpgme_error_t err)
     if (!(strerror = PyUnicode_DecodeUTF8(buf, strlen(buf), "replace")))
         goto end;
 
-    exc = PyObject_CallFunction(pygpgme_error, "OOO", source, code, strerror);
+    exc = PyObject_CallFunction(state->pygpgme_error, "OOO", source, code, strerror);
     if (!exc)
         goto end;
 
@@ -62,24 +59,24 @@ end:
 /* check whether the given gpgme_error_t value indicates an error.  If so,
  * raise an equivalent Python exception and return TRUE */
 int
-pygpgme_check_error(gpgme_error_t err)
+pygpgme_check_error(PyGpgmeModState *state, gpgme_error_t err)
 {
     PyObject *exc;
 
     if (err == GPG_ERR_NO_ERROR)
         return 0;
 
-    exc = pygpgme_error_object(err);
+    exc = pygpgme_error_object(state, err);
     if (!exc)
         return -1;
 
-    PyErr_SetObject(pygpgme_error, exc);
+    PyErr_SetObject(state->pygpgme_error, exc);
 
     return -1;
 }
 
 gpgme_error_t
-pygpgme_check_pyerror(void)
+pygpgme_check_pyerror(PyGpgmeModState *state)
 {
     PyObject *err_type, *err_value, *err_traceback;
     gpgme_error_t err;
@@ -101,7 +98,7 @@ pygpgme_check_pyerror(void)
     if (source == NULL)
         goto end;
 
-    if (PyErr_GivenExceptionMatches(err_type, pygpgme_error)) {
+    if (PyErr_GivenExceptionMatches(err_type, state->pygpgme_error)) {
         code = PyTuple_GetItem(args, 1);
         if (code == NULL)
             goto end;

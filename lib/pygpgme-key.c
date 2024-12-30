@@ -230,7 +230,9 @@ pygpgme_key_sig_get_expires(PyGpgmeKeySig *self)
 static PyObject *
 pygpgme_key_sig_get_status(PyGpgmeKeySig *self)
 {
-    return pygpgme_error_object(self->key_sig->status);
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+
+    return pygpgme_error_object(state, self->key_sig->status);
 }
 
 static PyObject *

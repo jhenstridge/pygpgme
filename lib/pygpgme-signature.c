@@ -244,13 +244,13 @@ pygpgme_siglist_new(PyGpgmeModState *state, gpgme_signature_t siglist)
             Py_INCREF(Py_None);
             item->fpr = Py_None;
         }
-        item->status = pygpgme_error_object(sig->status);
+        item->status = pygpgme_error_object(state, sig->status);
         item->notations = pygpgme_sig_notation_list_new(state, sig->notations);
         item->timestamp = PyLong_FromLong(sig->timestamp);
         item->exp_timestamp = PyLong_FromLong(sig->exp_timestamp);
         item->wrong_key_usage = PyBool_FromLong(sig->wrong_key_usage);
         item->validity = pygpgme_enum_value_new(PyGpgmeValidity_Type, sig->validity);
-        item->validity_reason = pygpgme_error_object(sig->validity_reason);
+        item->validity_reason = pygpgme_error_object(state, sig->validity_reason);
         item->pubkey_algo = pygpgme_enum_value_new(PyGpgmePubkeyAlgo_Type, sig->pubkey_algo);
         item->hash_algo = pygpgme_enum_value_new(PyGpgmeHashAlgo_Type, sig->hash_algo);
         if (PyErr_Occurred()) {

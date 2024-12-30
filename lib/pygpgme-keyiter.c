@@ -22,9 +22,11 @@
 static void
 pygpgme_keyiter_dealloc(PyGpgmeKeyIter *self)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+
     if (self->ctx) {
         gpgme_error_t err = gpgme_op_keylist_end(self->ctx->ctx);
-        PyObject *exc = pygpgme_error_object(err);
+        PyObject *exc = pygpgme_error_object(state, err);
 
         if (exc != NULL && exc != Py_None) {
             PyErr_WriteUnraisable(exc);
@@ -62,7 +64,7 @@ pygpgme_keyiter_next(PyGpgmeKeyIter *self)
         return NULL;
     }
 
-    if (pygpgme_check_error(err))
+    if (pygpgme_check_error(state, err))
         return NULL;
 
     if (key == NULL)

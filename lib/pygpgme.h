@@ -31,6 +31,9 @@
 typedef struct {
     PyObject_HEAD
     gpgme_ctx_t ctx;
+
+    PyObject *passphrase_cb;
+    PyObject *progress_cb;
 } PyGpgmeContext;
 
 typedef struct {
@@ -128,8 +131,6 @@ typedef struct {
     PyGpgmeContext *ctx;
 } PyGpgmeKeyIter;
 
-extern HIDDEN PyObject *pygpgme_error;
-
 extern HIDDEN PyObject *PyGpgmeDataEncoding_Type;
 extern HIDDEN PyObject *PyGpgmePubkeyAlgo_Type;
 extern HIDDEN PyObject *PyGpgmeHashAlgo_Type;
@@ -178,15 +179,18 @@ typedef struct {
     PyObject *pygpgme_error;
 } PyGpgmeModState;
 
-HIDDEN int           pygpgme_check_error    (gpgme_error_t err);
-HIDDEN PyObject     *pygpgme_error_object   (gpgme_error_t err);
-HIDDEN gpgme_error_t pygpgme_check_pyerror  (void);
+HIDDEN int           pygpgme_check_error    (PyGpgmeModState *state,
+                                             gpgme_error_t err);
+HIDDEN PyObject     *pygpgme_error_object   (PyGpgmeModState *state,
+                                             gpgme_error_t err);
+HIDDEN gpgme_error_t pygpgme_check_pyerror  (PyGpgmeModState *state);
 HIDDEN int           pygpgme_no_constructor (PyObject *self, PyObject *args,
                                              PyObject *kwargs);
 
 HIDDEN PyObject     *pygpgme_engine_info_list_new(PyGpgmeModState *state,
                                                   gpgme_engine_info_t info);
-HIDDEN int           pygpgme_data_new       (gpgme_data_t *dh, PyObject *fp);
+HIDDEN int           pygpgme_data_new       (PyGpgmeModState *state,
+                                             gpgme_data_t *dh, PyObject *fp);
 HIDDEN PyObject     *pygpgme_key_new        (PyGpgmeModState *state,
                                              gpgme_key_t key);
 HIDDEN PyObject     *pygpgme_newsiglist_new (PyGpgmeModState *state,

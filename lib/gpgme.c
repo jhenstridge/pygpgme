@@ -35,10 +35,10 @@ pygpgme_mod_exec(PyObject *mod) {
     PyGpgmeModState *state = PyModule_GetState(mod);
     const char *gpgme_version;
 
-    pygpgme_error = PyErr_NewException("gpgme.GpgmeError",
-                                       PyExc_RuntimeError, NULL);
-    Py_INCREF(pygpgme_error);
-    state->pygpgme_error = pygpgme_error;
+    state->pygpgme_error = PyErr_NewException("gpgme.GpgmeError",
+                                              PyExc_RuntimeError, NULL);
+    Py_INCREF(state->pygpgme_error);
+    PyModule_AddObject(mod, "GpgmeError", state->pygpgme_error);
 
 #define INIT_TYPE(type, spec) \
     state->PyGpgme##type##_Type = PyType_FromModuleAndSpec(mod, spec, NULL); \
@@ -59,9 +59,6 @@ pygpgme_mod_exec(PyObject *mod) {
     INIT_TYPE(SigNotation, &pygpgme_sig_notation_spec);
     INIT_TYPE(ImportResult, &pygpgme_import_result_spec);
     INIT_TYPE(GenkeyResult, &pygpgme_genkey_result_spec);
-
-    Py_INCREF(state->pygpgme_error);
-    PyModule_AddObject(mod, "GpgmeError", state->pygpgme_error);
 
     pygpgme_add_constants(mod);
 
