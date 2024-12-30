@@ -94,7 +94,9 @@ static const char pygpgme_context_protocol_doc[] =
 static PyObject *
 pygpgme_context_get_protocol(PyGpgmeContext *self)
 {
-    return pygpgme_enum_value_new(PyGpgmeProtocol_Type, gpgme_get_protocol(self->ctx));
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+
+    return pygpgme_enum_value_new(state->PyGpgmeProtocol_Type, gpgme_get_protocol(self->ctx));
 }
 
 static int
@@ -239,7 +241,9 @@ static const char pygpgme_context_keylist_mode_doc[] =
 static PyObject *
 pygpgme_context_get_keylist_mode(PyGpgmeContext *self)
 {
-    return pygpgme_enum_value_new(PyGpgmeKeylistMode_Type, gpgme_get_keylist_mode(self->ctx));
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+
+    return pygpgme_enum_value_new(state->PyGpgmeKeylistMode_Type, gpgme_get_keylist_mode(self->ctx));
 }
 
 static int
@@ -269,7 +273,9 @@ static const char pygpgme_context_pinentry_mode_doc[] =
 static PyObject *
 pygpgme_context_get_pinentry_mode(PyGpgmeContext *self)
 {
-    return pygpgme_enum_value_new(PyGpgmePinentryMode_Type, gpgme_get_pinentry_mode(self->ctx));
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+
+    return pygpgme_enum_value_new(state->PyGpgmePinentryMode_Type, gpgme_get_pinentry_mode(self->ctx));
 }
 
 static int
@@ -1731,7 +1737,7 @@ pygpgme_edit_cb(void *user_data, gpgme_status_code_t status,
     gil_state = PyGILState_Ensure();
     data = (struct edit_cb_data *)user_data;
     state = PyType_GetModuleState(Py_TYPE(data->self));
-    py_status = pygpgme_enum_value_new(PyGpgmeStatus_Type, status);
+    py_status = pygpgme_enum_value_new(state->PyGpgmeStatus_Type, status);
     ret = PyObject_CallFunction(data->callback, "Ozi", py_status, args, fd);
     Py_DECREF(py_status);
     err = pygpgme_check_pyerror(state);

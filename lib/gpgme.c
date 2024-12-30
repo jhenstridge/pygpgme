@@ -87,6 +87,25 @@ pygpgme_mod_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->PyGpgmeSigNotation_Type);
     Py_VISIT(state->PyGpgmeImportResult_Type);
     Py_VISIT(state->PyGpgmeGenkeyResult_Type);
+
+    Py_VISIT(state->PyGpgmeDataEncoding_Type);
+    Py_VISIT(state->PyGpgmePubkeyAlgo_Type);
+    Py_VISIT(state->PyGpgmeHashAlgo_Type);
+    Py_VISIT(state->PyGpgmeSigMode_Type);
+    Py_VISIT(state->PyGpgmeValidity_Type);
+    Py_VISIT(state->PyGpgmeProtocol_Type);
+    Py_VISIT(state->PyGpgmeKeylistMode_Type);
+    Py_VISIT(state->PyGpgmePinentryMode_Type);
+    Py_VISIT(state->PyGpgmeExportMode_Type);
+    Py_VISIT(state->PyGpgmeSigNotationFlags_Type);
+    Py_VISIT(state->PyGpgmeStatus_Type);
+    Py_VISIT(state->PyGpgmeEncryptFlags_Type);
+    Py_VISIT(state->PyGpgmeSigsum_Type);
+    Py_VISIT(state->PyGpgmeImport_Type);
+    Py_VISIT(state->PyGpgmeDelete_Type);
+    Py_VISIT(state->PyGpgmeErrSource_Type);
+    Py_VISIT(state->PyGpgmeErrCode_Type);
+
     Py_VISIT(state->pygpgme_error);
     return 0;
 }
@@ -108,6 +127,25 @@ pygpgme_mod_clear(PyObject *mod)
     Py_CLEAR(state->PyGpgmeSigNotation_Type);
     Py_CLEAR(state->PyGpgmeImportResult_Type);
     Py_CLEAR(state->PyGpgmeGenkeyResult_Type);
+
+    Py_CLEAR(state->PyGpgmeDataEncoding_Type);
+    Py_CLEAR(state->PyGpgmePubkeyAlgo_Type);
+    Py_CLEAR(state->PyGpgmeHashAlgo_Type);
+    Py_CLEAR(state->PyGpgmeSigMode_Type);
+    Py_CLEAR(state->PyGpgmeValidity_Type);
+    Py_CLEAR(state->PyGpgmeProtocol_Type);
+    Py_CLEAR(state->PyGpgmeKeylistMode_Type);
+    Py_CLEAR(state->PyGpgmePinentryMode_Type);
+    Py_CLEAR(state->PyGpgmeExportMode_Type);
+    Py_CLEAR(state->PyGpgmeSigNotationFlags_Type);
+    Py_CLEAR(state->PyGpgmeStatus_Type);
+    Py_CLEAR(state->PyGpgmeEncryptFlags_Type);
+    Py_CLEAR(state->PyGpgmeSigsum_Type);
+    Py_CLEAR(state->PyGpgmeImport_Type);
+    Py_CLEAR(state->PyGpgmeDelete_Type);
+    Py_CLEAR(state->PyGpgmeErrSource_Type);
+    Py_CLEAR(state->PyGpgmeErrCode_Type);
+
     Py_CLEAR(state->pygpgme_error);
     return 0;
 }

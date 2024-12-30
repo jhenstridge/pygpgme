@@ -28,10 +28,10 @@ pygpgme_error_object(PyGpgmeModState *state, gpgme_error_t err)
     if (err == GPG_ERR_NO_ERROR)
         Py_RETURN_NONE;
 
-    if (!(source = pygpgme_enum_value_new(PyGpgmeErrSource_Type, gpgme_err_source(err))))
+    if (!(source = pygpgme_enum_value_new(state->PyGpgmeErrSource_Type, gpgme_err_source(err))))
         goto end;
 
-    if (!(code = pygpgme_enum_value_new(PyGpgmeErrCode_Type, gpgme_err_code(err))))
+    if (!(code = pygpgme_enum_value_new(state->PyGpgmeErrCode_Type, gpgme_err_code(err))))
         goto end;
 
     /* get the error string */

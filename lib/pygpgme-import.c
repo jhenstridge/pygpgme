@@ -136,7 +136,7 @@ pygpgme_import_result(PyGpgmeModState *state, gpgme_ctx_t ctx)
         item = Py_BuildValue("(NNN)",
                              py_fpr,
                              pygpgme_error_object(state, status->result),
-                             pygpgme_enum_value_new(PyGpgmeImport_Type, status->status));
+                             pygpgme_enum_value_new(state->PyGpgmeImport_Type, status->status));
         if (!item) {
             Py_DECREF(self);
             return NULL;

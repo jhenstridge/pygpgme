@@ -131,24 +131,6 @@ typedef struct {
     PyGpgmeContext *ctx;
 } PyGpgmeKeyIter;
 
-extern HIDDEN PyObject *PyGpgmeDataEncoding_Type;
-extern HIDDEN PyObject *PyGpgmePubkeyAlgo_Type;
-extern HIDDEN PyObject *PyGpgmeHashAlgo_Type;
-extern HIDDEN PyObject *PyGpgmeSigMode_Type;
-extern HIDDEN PyObject *PyGpgmeValidity_Type;
-extern HIDDEN PyObject *PyGpgmeProtocol_Type;
-extern HIDDEN PyObject *PyGpgmeKeylistMode_Type;
-extern HIDDEN PyObject *PyGpgmePinentryMode_Type;
-extern HIDDEN PyObject *PyGpgmeExportMode_Type;
-extern HIDDEN PyObject *PyGpgmeSigNotationFlags_Type;
-extern HIDDEN PyObject *PyGpgmeStatus_Type;
-extern HIDDEN PyObject *PyGpgmeEncryptFlags_Type;
-extern HIDDEN PyObject *PyGpgmeSigsum_Type;
-extern HIDDEN PyObject *PyGpgmeImport_Type;
-extern HIDDEN PyObject *PyGpgmeDelete_Type;
-extern HIDDEN PyObject *PyGpgmeErrSource_Type;
-extern HIDDEN PyObject *PyGpgmeErrCode_Type;
-
 extern HIDDEN PyType_Spec pygpgme_context_spec;
 extern HIDDEN PyType_Spec pygpgme_engine_info_spec;
 extern HIDDEN PyType_Spec pygpgme_key_spec;
@@ -175,6 +157,25 @@ typedef struct {
     PyObject *PyGpgmeSigNotation_Type;
     PyObject *PyGpgmeImportResult_Type;
     PyObject *PyGpgmeGenkeyResult_Type;
+
+    /* enumerations and flags */
+    PyObject *PyGpgmeDataEncoding_Type;
+    PyObject *PyGpgmePubkeyAlgo_Type;
+    PyObject *PyGpgmeHashAlgo_Type;
+    PyObject *PyGpgmeSigMode_Type;
+    PyObject *PyGpgmeValidity_Type;
+    PyObject *PyGpgmeProtocol_Type;
+    PyObject *PyGpgmeKeylistMode_Type;
+    PyObject *PyGpgmePinentryMode_Type;
+    PyObject *PyGpgmeExportMode_Type;
+    PyObject *PyGpgmeSigNotationFlags_Type;
+    PyObject *PyGpgmeStatus_Type;
+    PyObject *PyGpgmeEncryptFlags_Type;
+    PyObject *PyGpgmeSigsum_Type;
+    PyObject *PyGpgmeImport_Type;
+    PyObject *PyGpgmeDelete_Type;
+    PyObject *PyGpgmeErrSource_Type;
+    PyObject *PyGpgmeErrCode_Type;
 
     PyObject *pygpgme_error;
 } PyGpgmeModState;
