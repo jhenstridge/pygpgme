@@ -86,7 +86,9 @@ pygpgme_subkey_get_can_authenticate(PyGpgmeSubkey *self)
 static PyObject *
 pygpgme_subkey_get_pubkey_algo(PyGpgmeSubkey *self)
 {
-    return pygpgme_enum_value_new(PyGpgmePubkeyAlgo_Type, self->subkey->pubkey_algo);
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+
+    return pygpgme_enum_value_new(state->PubkeyAlgo_Type, self->subkey->pubkey_algo);
 }
 
 static PyObject *
@@ -146,13 +148,24 @@ static PyGetSetDef pygpgme_subkey_getsets[] = {
     { NULL, (getter)0, (setter)0 }
 };
 
-PyTypeObject PyGpgmeSubkey_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "gpgme.Subkey",
-    sizeof(PyGpgmeSubkey),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_dealloc = (destructor)pygpgme_subkey_dealloc,
-    .tp_getset = pygpgme_subkey_getsets,
+static PyType_Slot pygpgme_subkey_slots[] = {
+#if PY_VERSION_HEX < 0x030a0000
+    { Py_tp_init, pygpgme_no_constructor },
+#endif
+    { Py_tp_dealloc, pygpgme_subkey_dealloc },
+    { Py_tp_getset, pygpgme_subkey_getsets },
+    { 0, NULL },
+};
+
+PyType_Spec pygpgme_subkey_spec = {
+    .name = "gpgme.Subkey",
+    .basicsize = sizeof(PyGpgmeSubkey),
+    .flags = Py_TPFLAGS_DEFAULT
+#if PY_VERSION_HEX >= 0x030a0000
+    | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE
+#endif
+    ,
+    .slots = pygpgme_subkey_slots,
 };
 
 static void
@@ -191,7 +204,9 @@ pygpgme_key_sig_get_exportable(PyGpgmeKeySig *self)
 static PyObject *
 pygpgme_key_sig_get_pubkey_algo(PyGpgmeKeySig *self)
 {
-    return pygpgme_enum_value_new(PyGpgmePubkeyAlgo_Type, self->key_sig->pubkey_algo);
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+
+    return pygpgme_enum_value_new(state->PubkeyAlgo_Type, self->key_sig->pubkey_algo);
 }
 
 static PyObject *
@@ -219,7 +234,9 @@ pygpgme_key_sig_get_expires(PyGpgmeKeySig *self)
 static PyObject *
 pygpgme_key_sig_get_status(PyGpgmeKeySig *self)
 {
-    return pygpgme_error_object(self->key_sig->status);
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+
+    return pygpgme_error_object(state, self->key_sig->status);
 }
 
 static PyObject *
@@ -286,13 +303,24 @@ static PyGetSetDef pygpgme_key_sig_getsets[] = {
     { NULL, (getter)0, (setter)0 }
 };
 
-PyTypeObject PyGpgmeKeySig_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "gpgme.KeySig",
-    sizeof(PyGpgmeKeySig),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_dealloc = (destructor)pygpgme_key_sig_dealloc,
-    .tp_getset = pygpgme_key_sig_getsets,
+static PyType_Slot pygpgme_key_sig_slots[] = {
+#if PY_VERSION_HEX < 0x030a0000
+    { Py_tp_init, pygpgme_no_constructor },
+#endif
+    { Py_tp_dealloc, pygpgme_key_sig_dealloc },
+    { Py_tp_getset, pygpgme_key_sig_getsets },
+    { 0, NULL },
+};
+
+PyType_Spec pygpgme_key_sig_spec = {
+    .name = "gpgme.KeySig",
+    .basicsize = sizeof(PyGpgmeKeySig),
+    .flags = Py_TPFLAGS_DEFAULT
+#if PY_VERSION_HEX >= 0x030a0000
+    | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE
+#endif
+    ,
+    .slots = pygpgme_key_sig_slots,
 };
 
 static void
@@ -319,7 +347,9 @@ pygpgme_user_id_get_invalid(PyGpgmeUserId *self)
 static PyObject *
 pygpgme_user_id_get_validity(PyGpgmeUserId *self)
 {
-    return pygpgme_enum_value_new(PyGpgmeValidity_Type, self->user_id->validity);
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+
+    return pygpgme_enum_value_new(state->Validity_Type, self->user_id->validity);
 }
 
 static PyObject *
@@ -365,6 +395,7 @@ pygpgme_user_id_get_comment(PyGpgmeUserId *self)
 static PyObject *
 pygpgme_user_id_get_signatures(PyGpgmeUserId *self)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *ret;
     gpgme_key_sig_t sig;
 
@@ -374,7 +405,7 @@ pygpgme_user_id_get_signatures(PyGpgmeUserId *self)
     for (sig = self->user_id->signatures; sig != NULL; sig = sig->next) {
         PyGpgmeKeySig *item;
 
-        item = PyObject_New(PyGpgmeKeySig, &PyGpgmeKeySig_Type);
+        item = PyObject_New(PyGpgmeKeySig, state->KeySig_Type);
         if (item == NULL) {
             Py_DECREF(ret);
             return NULL;
@@ -400,13 +431,24 @@ static PyGetSetDef pygpgme_user_id_getsets[] = {
     { NULL, (getter)0, (setter)0 }
 };
 
-PyTypeObject PyGpgmeUserId_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "gpgme.UserId",
-    sizeof(PyGpgmeUserId),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_dealloc = (destructor)pygpgme_user_id_dealloc,
-    .tp_getset = pygpgme_user_id_getsets,
+static PyType_Slot pygpgme_user_id_slots[] = {
+#if PY_VERSION_HEX < 0x030a0000
+    { Py_tp_init, pygpgme_no_constructor },
+#endif
+    { Py_tp_dealloc, pygpgme_user_id_dealloc },
+    { Py_tp_getset, pygpgme_user_id_getsets },
+    { 0, NULL },
+};
+
+PyType_Spec pygpgme_user_id_spec = {
+    .name = "gpgme.UserId",
+    .basicsize = sizeof(PyGpgmeUserId),
+    .flags = Py_TPFLAGS_DEFAULT
+#if PY_VERSION_HEX >= 0x030a0000
+    | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE
+#endif
+    ,
+    .slots = pygpgme_user_id_slots,
 };
 
 static void
@@ -514,7 +556,9 @@ static const char pygpgme_key_protocol_doc[] =
 static PyObject *
 pygpgme_key_get_protocol(PyGpgmeKey *self)
 {
-    return pygpgme_enum_value_new(PyGpgmeProtocol_Type, self->key->protocol);
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+
+    return pygpgme_enum_value_new(state->Protocol_Type, self->key->protocol);
 }
 
 static const char pygpgme_key_issuer_serial_doc[] =
@@ -570,7 +614,9 @@ static const char pygpgme_key_owner_trust_doc[] =
 static PyObject *
 pygpgme_key_get_owner_trust(PyGpgmeKey *self)
 {
-    return pygpgme_enum_value_new(PyGpgmeValidity_Type, self->key->owner_trust);
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+
+    return pygpgme_enum_value_new(state->Validity_Type, self->key->owner_trust);
 }
 
 static const char pygpgme_key_subkeys_doc[] =
@@ -581,6 +627,7 @@ static const char pygpgme_key_subkeys_doc[] =
 static PyObject *
 pygpgme_key_get_subkeys(PyGpgmeKey *self)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *ret;
     gpgme_subkey_t subkey;
 
@@ -590,7 +637,7 @@ pygpgme_key_get_subkeys(PyGpgmeKey *self)
     for (subkey = self->key->subkeys; subkey != NULL; subkey = subkey->next) {
         PyGpgmeSubkey *item;
 
-        item = PyObject_New(PyGpgmeSubkey, &PyGpgmeSubkey_Type);
+        item = PyObject_New(PyGpgmeSubkey, state->Subkey_Type);
         if (item == NULL) {
             Py_DECREF(ret);
             return NULL;
@@ -612,6 +659,7 @@ static const char pygpgme_key_uids_doc[] =
 static PyObject *
 pygpgme_key_get_uids(PyGpgmeKey *self)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *ret;
     gpgme_user_id_t uid;
 
@@ -621,7 +669,7 @@ pygpgme_key_get_uids(PyGpgmeKey *self)
     for (uid = self->key->uids; uid != NULL; uid = uid->next) {
         PyGpgmeUserId *item;
 
-        item = PyObject_New(PyGpgmeUserId, &PyGpgmeUserId_Type);
+        item = PyObject_New(PyGpgmeUserId, state->UserId_Type);
         if (item == NULL) {
             Py_DECREF(ret);
             return NULL;
@@ -643,7 +691,9 @@ static const char pygpgme_key_keylist_mode_doc[] =
 static PyObject *
 pygpgme_key_get_keylist_mode(PyGpgmeKey *self)
 {
-    return pygpgme_enum_value_new(PyGpgmeKeylistMode_Type, self->key->keylist_mode);
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+
+    return pygpgme_enum_value_new(state->KeylistMode_Type, self->key->keylist_mode);
 }
 
 static PyGetSetDef pygpgme_key_getsets[] = {
@@ -684,21 +734,32 @@ static PyGetSetDef pygpgme_key_getsets[] = {
     { NULL, (getter)0, (setter)0 }
 };
 
-PyTypeObject PyGpgmeKey_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "gpgme.Key",
-    sizeof(PyGpgmeKey),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_dealloc = (destructor)pygpgme_key_dealloc,
-    .tp_getset = pygpgme_key_getsets,
+static PyType_Slot pygpgme_key_slots[] = {
+#if PY_VERSION_HEX < 0x030a0000
+    { Py_tp_init, pygpgme_no_constructor },
+#endif
+    { Py_tp_dealloc, pygpgme_key_dealloc },
+    { Py_tp_getset, pygpgme_key_getsets },
+    { 0, NULL },
+};
+
+PyType_Spec pygpgme_key_spec = {
+    .name = "gpgme.Key",
+    .basicsize = sizeof(PyGpgmeKey),
+    .flags = Py_TPFLAGS_DEFAULT
+#if PY_VERSION_HEX >= 0x030a0000
+    | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE
+#endif
+    ,
+    .slots = pygpgme_key_slots,
 };
 
 PyObject *
-pygpgme_key_new(gpgme_key_t key)
+pygpgme_key_new(PyGpgmeModState *state, gpgme_key_t key)
 {
     PyGpgmeKey *self;
 
-    self = PyObject_New(PyGpgmeKey, &PyGpgmeKey_Type);
+    self = PyObject_New(PyGpgmeKey, state->Key_Type);
     if (self == NULL)
         return NULL;
 

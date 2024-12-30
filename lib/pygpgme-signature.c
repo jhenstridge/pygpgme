@@ -49,18 +49,29 @@ static const char pygpgme_newsig_doc[] =
     "Instances of this class are usually obtained as the result value of\n"
     ":meth:`Context.sign` or :meth:`Context.encrypt_sign`.\n";
 
-PyTypeObject PyGpgmeNewSignature_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "gpgme.NewSignature",
-    sizeof(PyGpgmeNewSignature),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_dealloc = (destructor)pygpgme_newsig_dealloc,
-    .tp_members = pygpgme_newsig_members,
-    .tp_doc = pygpgme_newsig_doc,
+static PyType_Slot pygpgme_newsig_slots[] = {
+#if PY_VERSION_HEX < 0x030a0000
+    { Py_tp_init, pygpgme_no_constructor },
+#endif
+    { Py_tp_dealloc, pygpgme_newsig_dealloc },
+    { Py_tp_members, pygpgme_newsig_members },
+    { Py_tp_doc, (void *)pygpgme_newsig_doc },
+    { 0, NULL },
+};
+
+PyType_Spec pygpgme_newsig_spec = {
+    .name = "gpgme.NewSignature",
+    .basicsize = sizeof(PyGpgmeNewSignature),
+    .flags = Py_TPFLAGS_DEFAULT
+#if PY_VERSION_HEX >= 0x030a0000
+    | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE
+#endif
+    ,
+    .slots = pygpgme_newsig_slots,
 };
 
 PyObject *
-pygpgme_newsiglist_new(gpgme_new_signature_t siglist)
+pygpgme_newsiglist_new(PyGpgmeModState *state, gpgme_new_signature_t siglist)
 {
     PyObject *list;
     gpgme_new_signature_t sig;
@@ -68,14 +79,14 @@ pygpgme_newsiglist_new(gpgme_new_signature_t siglist)
     list = PyList_New(0);
     for (sig = siglist; sig != NULL; sig = sig->next) {
         PyGpgmeNewSignature *item = PyObject_New(PyGpgmeNewSignature,
-                                                 &PyGpgmeNewSignature_Type);
+                                                 state->NewSignature_Type);
         if (item == NULL) {
             Py_DECREF(list);
             return NULL;
         }
-        item->type = pygpgme_enum_value_new(PyGpgmeSigMode_Type, sig->type);
-        item->pubkey_algo = pygpgme_enum_value_new(PyGpgmePubkeyAlgo_Type, sig->pubkey_algo);
-        item->hash_algo = pygpgme_enum_value_new(PyGpgmeHashAlgo_Type, sig->hash_algo);
+        item->type = pygpgme_enum_value_new(state->SigMode_Type, sig->type);
+        item->pubkey_algo = pygpgme_enum_value_new(state->PubkeyAlgo_Type, sig->pubkey_algo);
+        item->hash_algo = pygpgme_enum_value_new(state->HashAlgo_Type, sig->hash_algo);
         item->timestamp = PyLong_FromLong(sig->timestamp);
         if (sig->fpr) {
             item->fpr = PyUnicode_DecodeASCII(sig->fpr, strlen(sig->fpr),
@@ -190,18 +201,29 @@ static const char pygpgme_sig_doc[] =
     "Instances of this class are usually obtained as the return value of\n"
     ":meth:`Context.verify` or :meth:`Context.decrypt_verify`.\n";
 
-PyTypeObject PyGpgmeSignature_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "gpgme.Signature",
-    sizeof(PyGpgmeSignature),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_dealloc = (destructor)pygpgme_sig_dealloc,
-    .tp_members = pygpgme_sig_members,
-    .tp_doc = pygpgme_sig_doc,
+static PyType_Slot pygpgme_sig_slots[] = {
+#if PY_VERSION_HEX < 0x030a0000
+    { Py_tp_init, pygpgme_no_constructor },
+#endif
+    { Py_tp_dealloc, pygpgme_sig_dealloc },
+    { Py_tp_members, pygpgme_sig_members },
+    { Py_tp_doc, (void *)pygpgme_sig_doc },
+    { 0, NULL },
+};
+
+PyType_Spec pygpgme_sig_spec = {
+    .name = "gpgme.Signature",
+    .basicsize = sizeof(PyGpgmeSignature),
+    .flags = Py_TPFLAGS_DEFAULT
+#if PY_VERSION_HEX >= 0x030a0000
+    | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE
+#endif
+    ,
+    .slots = pygpgme_sig_slots,
 };
 
 PyObject *
-pygpgme_siglist_new(gpgme_signature_t siglist)
+pygpgme_siglist_new(PyGpgmeModState *state, gpgme_signature_t siglist)
 {
     PyObject *list;
     gpgme_signature_t sig;
@@ -209,12 +231,12 @@ pygpgme_siglist_new(gpgme_signature_t siglist)
     list = PyList_New(0);
     for (sig = siglist; sig != NULL; sig = sig->next) {
         PyGpgmeSignature *item = PyObject_New(PyGpgmeSignature,
-                                              &PyGpgmeSignature_Type);
+                                              state->Signature_Type);
         if (item == NULL) {
             Py_DECREF(list);
             return NULL;
         }
-        item->summary = pygpgme_enum_value_new(PyGpgmeSigsum_Type, sig->summary);
+        item->summary = pygpgme_enum_value_new(state->Sigsum_Type, sig->summary);
         if (sig->fpr) {
             item->fpr = PyUnicode_DecodeASCII(sig->fpr, strlen(sig->fpr),
                                               "replace");
@@ -222,15 +244,15 @@ pygpgme_siglist_new(gpgme_signature_t siglist)
             Py_INCREF(Py_None);
             item->fpr = Py_None;
         }
-        item->status = pygpgme_error_object(sig->status);
-        item->notations = pygpgme_sig_notation_list_new(sig->notations);
+        item->status = pygpgme_error_object(state, sig->status);
+        item->notations = pygpgme_sig_notation_list_new(state, sig->notations);
         item->timestamp = PyLong_FromLong(sig->timestamp);
         item->exp_timestamp = PyLong_FromLong(sig->exp_timestamp);
         item->wrong_key_usage = PyBool_FromLong(sig->wrong_key_usage);
-        item->validity = pygpgme_enum_value_new(PyGpgmeValidity_Type, sig->validity);
-        item->validity_reason = pygpgme_error_object(sig->validity_reason);
-        item->pubkey_algo = pygpgme_enum_value_new(PyGpgmePubkeyAlgo_Type, sig->pubkey_algo);
-        item->hash_algo = pygpgme_enum_value_new(PyGpgmeHashAlgo_Type, sig->hash_algo);
+        item->validity = pygpgme_enum_value_new(state->Validity_Type, sig->validity);
+        item->validity_reason = pygpgme_error_object(state, sig->validity_reason);
+        item->pubkey_algo = pygpgme_enum_value_new(state->PubkeyAlgo_Type, sig->pubkey_algo);
+        item->hash_algo = pygpgme_enum_value_new(state->HashAlgo_Type, sig->hash_algo);
         if (PyErr_Occurred()) {
             Py_DECREF(item);
             Py_DECREF(list);
@@ -309,11 +331,6 @@ pygpgme_sig_notation_item(PyGpgmeSigNotation *self, Py_ssize_t index)
     }
 }
 
-static PySequenceMethods pygpgme_sig_notation_as_sequence = {
-    .sq_length = (lenfunc)pygpgme_sig_notation_length,
-    .sq_item = (ssizeargfunc)pygpgme_sig_notation_item,
-};
-
 static PyMemberDef pygpgme_sig_notation_members[] = {
     { "name", T_OBJECT, offsetof(PyGpgmeSigNotation, name), READONLY},
     { "value", T_OBJECT, offsetof(PyGpgmeSigNotation, value), READONLY},
@@ -323,7 +340,9 @@ static PyMemberDef pygpgme_sig_notation_members[] = {
 static PyObject *
 pygpgme_sig_notation_get_flags(PyGpgmeSigNotation *self)
 {
-    return pygpgme_enum_value_new(PyGpgmeSigNotationFlags_Type, self->flags);
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+
+    return pygpgme_enum_value_new(state->SigNotationFlags_Type, self->flags);
 }
 
 static PyObject *
@@ -345,20 +364,29 @@ static PyGetSetDef pygpgme_sig_notation_getsets[] = {
     { NULL, (getter)0, (setter)0 }
 };
 
-PyTypeObject PyGpgmeSigNotation_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "gpgme.SigNotation",
-    sizeof(PyGpgmeSigNotation),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_init = (initproc)pygpgme_sig_notation_init,
-    .tp_dealloc = (destructor)pygpgme_sig_notation_dealloc,
-    .tp_as_sequence = &pygpgme_sig_notation_as_sequence,
-    .tp_members = pygpgme_sig_notation_members,
-    .tp_getset = pygpgme_sig_notation_getsets,
+static PyType_Slot pygpgme_sig_notation_slots[] = {
+    { Py_tp_init, pygpgme_sig_notation_init },
+    { Py_tp_dealloc, pygpgme_sig_notation_dealloc },
+    { Py_tp_members, pygpgme_sig_notation_members },
+    { Py_tp_getset, pygpgme_sig_notation_getsets },
+    { Py_sq_length, pygpgme_sig_notation_length },
+    { Py_sq_item, pygpgme_sig_notation_item },
+    { 0, NULL },
+};
+
+PyType_Spec pygpgme_sig_notation_spec = {
+    .name = "gpgme.SigNotation",
+    .basicsize = sizeof(PyGpgmeSigNotation),
+    .flags = Py_TPFLAGS_DEFAULT
+#if PY_VERSION_HEX >= 0x030a0000
+    | Py_TPFLAGS_IMMUTABLETYPE
+#endif
+    ,
+    .slots = pygpgme_sig_notation_slots,
 };
 
 PyObject *
-pygpgme_sig_notation_list_new(gpgme_sig_notation_t notations)
+pygpgme_sig_notation_list_new(PyGpgmeModState *state, gpgme_sig_notation_t notations)
 {
     gpgme_sig_notation_t not;
     PyObject *list;
@@ -366,7 +394,7 @@ pygpgme_sig_notation_list_new(gpgme_sig_notation_t notations)
     list = PyList_New(0);
     for (not = notations; not != NULL; not = not->next) {
         PyGpgmeSigNotation *item = PyObject_New(PyGpgmeSigNotation,
-                                                &PyGpgmeSigNotation_Type);
+                                                state->SigNotation_Type);
         if (item == NULL) {
             Py_DECREF(list);
             return NULL;

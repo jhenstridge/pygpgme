@@ -31,6 +31,9 @@
 typedef struct {
     PyObject_HEAD
     gpgme_ctx_t ctx;
+
+    PyObject *passphrase_cb;
+    PyObject *progress_cb;
 } PyGpgmeContext;
 
 typedef struct {
@@ -128,50 +131,79 @@ typedef struct {
     PyGpgmeContext *ctx;
 } PyGpgmeKeyIter;
 
-extern HIDDEN PyObject *pygpgme_error;
-extern HIDDEN PyTypeObject PyGpgmeContext_Type;
-extern HIDDEN PyTypeObject PyGpgmeEngineInfo_Type;
-extern HIDDEN PyTypeObject PyGpgmeKey_Type;
-extern HIDDEN PyTypeObject PyGpgmeSubkey_Type;
-extern HIDDEN PyTypeObject PyGpgmeUserId_Type;
-extern HIDDEN PyTypeObject PyGpgmeKeySig_Type;
-extern HIDDEN PyTypeObject PyGpgmeNewSignature_Type;
-extern HIDDEN PyTypeObject PyGpgmeSignature_Type;
-extern HIDDEN PyTypeObject PyGpgmeSigNotation_Type;
-extern HIDDEN PyTypeObject PyGpgmeImportResult_Type;
-extern HIDDEN PyTypeObject PyGpgmeGenkeyResult_Type;
-extern HIDDEN PyTypeObject PyGpgmeKeyIter_Type;
+extern HIDDEN PyType_Spec pygpgme_context_spec;
+extern HIDDEN PyType_Spec pygpgme_engine_info_spec;
+extern HIDDEN PyType_Spec pygpgme_key_spec;
+extern HIDDEN PyType_Spec pygpgme_subkey_spec;
+extern HIDDEN PyType_Spec pygpgme_user_id_spec;
+extern HIDDEN PyType_Spec pygpgme_key_sig_spec;
+extern HIDDEN PyType_Spec pygpgme_keyiter_spec;
+extern HIDDEN PyType_Spec pygpgme_newsig_spec;
+extern HIDDEN PyType_Spec pygpgme_sig_spec;
+extern HIDDEN PyType_Spec pygpgme_sig_notation_spec;
+extern HIDDEN PyType_Spec pygpgme_import_result_spec;
+extern HIDDEN PyType_Spec pygpgme_genkey_result_spec;
 
-extern HIDDEN PyObject *PyGpgmeDataEncoding_Type;
-extern HIDDEN PyObject *PyGpgmePubkeyAlgo_Type;
-extern HIDDEN PyObject *PyGpgmeHashAlgo_Type;
-extern HIDDEN PyObject *PyGpgmeSigMode_Type;
-extern HIDDEN PyObject *PyGpgmeValidity_Type;
-extern HIDDEN PyObject *PyGpgmeProtocol_Type;
-extern HIDDEN PyObject *PyGpgmeKeylistMode_Type;
-extern HIDDEN PyObject *PyGpgmePinentryMode_Type;
-extern HIDDEN PyObject *PyGpgmeExportMode_Type;
-extern HIDDEN PyObject *PyGpgmeSigNotationFlags_Type;
-extern HIDDEN PyObject *PyGpgmeStatus_Type;
-extern HIDDEN PyObject *PyGpgmeEncryptFlags_Type;
-extern HIDDEN PyObject *PyGpgmeSigsum_Type;
-extern HIDDEN PyObject *PyGpgmeImport_Type;
-extern HIDDEN PyObject *PyGpgmeDelete_Type;
-extern HIDDEN PyObject *PyGpgmeErrSource_Type;
-extern HIDDEN PyObject *PyGpgmeErrCode_Type;
+typedef struct {
+    PyTypeObject *Context_Type;
+    PyTypeObject *EngineInfo_Type;
+    PyTypeObject *Key_Type;
+    PyTypeObject *Subkey_Type;
+    PyTypeObject *UserId_Type;
+    PyTypeObject *KeySig_Type;
+    PyTypeObject *KeyIter_Type;
+    PyTypeObject *NewSignature_Type;
+    PyTypeObject *Signature_Type;
+    PyTypeObject *SigNotation_Type;
+    PyTypeObject *ImportResult_Type;
+    PyTypeObject *GenkeyResult_Type;
 
-HIDDEN int           pygpgme_check_error    (gpgme_error_t err);
-HIDDEN PyObject     *pygpgme_error_object   (gpgme_error_t err);
-HIDDEN gpgme_error_t pygpgme_check_pyerror  (void);
+    /* enumerations and flags */
+    PyObject *DataEncoding_Type;
+    PyObject *PubkeyAlgo_Type;
+    PyObject *HashAlgo_Type;
+    PyObject *SigMode_Type;
+    PyObject *Validity_Type;
+    PyObject *Protocol_Type;
+    PyObject *KeylistMode_Type;
+    PyObject *PinentryMode_Type;
+    PyObject *ExportMode_Type;
+    PyObject *SigNotationFlags_Type;
+    PyObject *Status_Type;
+    PyObject *EncryptFlags_Type;
+    PyObject *Sigsum_Type;
+    PyObject *Import_Type;
+    PyObject *Delete_Type;
+    PyObject *ErrSource_Type;
+    PyObject *ErrCode_Type;
 
-HIDDEN PyObject     *pygpgme_engine_info_list_new(gpgme_engine_info_t info);
-HIDDEN int           pygpgme_data_new       (gpgme_data_t *dh, PyObject *fp);
-HIDDEN PyObject     *pygpgme_key_new        (gpgme_key_t key);
-HIDDEN PyObject     *pygpgme_newsiglist_new (gpgme_new_signature_t siglist);
-HIDDEN PyObject     *pygpgme_siglist_new    (gpgme_signature_t siglist);
-HIDDEN PyObject     *pygpgme_sig_notation_list_new (gpgme_sig_notation_t notations);
-HIDDEN PyObject     *pygpgme_import_result  (gpgme_ctx_t ctx);
-HIDDEN PyObject     *pygpgme_genkey_result  (gpgme_ctx_t ctx);
+    PyObject *pygpgme_error;
+} PyGpgmeModState;
+
+HIDDEN int           pygpgme_check_error    (PyGpgmeModState *state,
+                                             gpgme_error_t err);
+HIDDEN PyObject     *pygpgme_error_object   (PyGpgmeModState *state,
+                                             gpgme_error_t err);
+HIDDEN gpgme_error_t pygpgme_check_pyerror  (PyGpgmeModState *state);
+HIDDEN int           pygpgme_no_constructor (PyObject *self, PyObject *args,
+                                             PyObject *kwargs);
+
+HIDDEN PyObject     *pygpgme_engine_info_list_new(PyGpgmeModState *state,
+                                                  gpgme_engine_info_t info);
+HIDDEN int           pygpgme_data_new       (PyGpgmeModState *state,
+                                             gpgme_data_t *dh, PyObject *fp);
+HIDDEN PyObject     *pygpgme_key_new        (PyGpgmeModState *state,
+                                             gpgme_key_t key);
+HIDDEN PyObject     *pygpgme_newsiglist_new (PyGpgmeModState *state,
+                                             gpgme_new_signature_t siglist);
+HIDDEN PyObject     *pygpgme_siglist_new    (PyGpgmeModState *state,
+                                             gpgme_signature_t siglist);
+HIDDEN PyObject     *pygpgme_sig_notation_list_new (PyGpgmeModState *state,
+                                                    gpgme_sig_notation_t notations);
+HIDDEN PyObject     *pygpgme_import_result  (PyGpgmeModState *state,
+                                             gpgme_ctx_t ctx);
+HIDDEN PyObject     *pygpgme_genkey_result  (PyGpgmeModState *state,
+                                             gpgme_ctx_t ctx);
 
 HIDDEN void          pygpgme_add_constants  (PyObject *mod);
 HIDDEN PyObject     *pygpgme_enum_value_new (PyObject *type, long value);

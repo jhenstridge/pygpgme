@@ -22,9 +22,11 @@
 static void
 pygpgme_keyiter_dealloc(PyGpgmeKeyIter *self)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+
     if (self->ctx) {
         gpgme_error_t err = gpgme_op_keylist_end(self->ctx->ctx);
-        PyObject *exc = pygpgme_error_object(err);
+        PyObject *exc = pygpgme_error_object(state, err);
 
         if (exc != NULL && exc != Py_None) {
             PyErr_WriteUnraisable(exc);
@@ -46,6 +48,7 @@ pygpgme_keyiter_iter(PyGpgmeKeyIter *self)
 static PyObject *
 pygpgme_keyiter_next(PyGpgmeKeyIter *self)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     gpgme_key_t key = NULL;
     gpgme_error_t err;
     PyObject *ret;
@@ -61,23 +64,34 @@ pygpgme_keyiter_next(PyGpgmeKeyIter *self)
         return NULL;
     }
 
-    if (pygpgme_check_error(err))
+    if (pygpgme_check_error(state, err))
         return NULL;
 
     if (key == NULL)
         Py_RETURN_NONE;
 
-    ret = pygpgme_key_new(key);
+    ret = pygpgme_key_new(state, key);
     gpgme_key_unref(key);
     return ret;
 }
 
-PyTypeObject PyGpgmeKeyIter_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "gpgme.KeyIter",
-    sizeof(PyGpgmeKeyIter),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_dealloc = (destructor)pygpgme_keyiter_dealloc,
-    .tp_iter = (getiterfunc)pygpgme_keyiter_iter,
-    .tp_iternext = (iternextfunc)pygpgme_keyiter_next,
+static PyType_Slot pygpgme_keyiter_slots[] = {
+#if PY_VERSION_HEX < 0x030a0000
+    { Py_tp_init, pygpgme_no_constructor },
+#endif
+    { Py_tp_dealloc, pygpgme_keyiter_dealloc },
+    { Py_tp_iter, pygpgme_keyiter_iter },
+    { Py_tp_iternext, pygpgme_keyiter_next },
+    { 0, NULL },
+};
+
+PyType_Spec pygpgme_keyiter_spec = {
+    .name = "gpgme.KeyIter",
+    .basicsize = sizeof(PyGpgmeKeyIter),
+    .flags = Py_TPFLAGS_DEFAULT
+#if PY_VERSION_HEX >= 0x030a0000
+    | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE
+#endif
+    ,
+    .slots = pygpgme_keyiter_slots,
 };

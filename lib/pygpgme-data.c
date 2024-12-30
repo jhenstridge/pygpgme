@@ -166,7 +166,7 @@ static struct gpgme_data_cbs python_data_cbs = {
 
 /* create a gpgme data object wrapping a Python file like object */
 int
-pygpgme_data_new(gpgme_data_t *dh, PyObject *fp)
+pygpgme_data_new(PyGpgmeModState *state, gpgme_data_t *dh, PyObject *fp)
 {
     gpgme_error_t error;
 
@@ -177,7 +177,7 @@ pygpgme_data_new(gpgme_data_t *dh, PyObject *fp)
 
     error = gpgme_data_new_from_cbs(dh, &python_data_cbs, fp);
 
-    if (pygpgme_check_error(error)) {
+    if (pygpgme_check_error(state, error)) {
         *dh = NULL;
         return -1;
     }
