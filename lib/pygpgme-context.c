@@ -437,7 +437,7 @@ pygpgme_context_set_signers(PyGpgmeContext *self, PyObject *value)
     for (i = 0; i < length; i++) {
         PyObject *item = PySequence_Fast_GET_ITEM(signers, i);
 
-        if (!PyObject_TypeCheck(item, (PyTypeObject *)state->Key_Type)) {
+        if (!Py_IS_TYPE(item, state->Key_Type)) {
             PyErr_SetString(PyExc_TypeError,
                             "signers must be a sequence of keys");
             ret = -1;
@@ -490,7 +490,7 @@ pygpgme_context_set_sig_notations(PyGpgmeContext *self, PyObject *value)
         PyGpgmeSigNotation *item = (PyGpgmeSigNotation *)PySequence_Fast_GET_ITEM(notations, i);
         const char *name = NULL, *value = NULL;
 
-        if (!PyObject_IsInstance((PyObject *)item, state->SigNotation_Type)) {
+        if (!Py_IS_TYPE((PyObject *)item, state->SigNotation_Type)) {
             PyErr_SetString(PyExc_TypeError, "sig_notations items must be gpgme.SigNotation objects");
             goto end;
         }
@@ -789,7 +789,7 @@ pygpgme_context_encrypt(PyGpgmeContext *self, PyObject *args)
         for (i = 0; i < length; i++) {
             PyObject *item = PySequence_Fast_GET_ITEM(recp_seq, i);
 
-            if (!PyObject_TypeCheck(item, (PyTypeObject *)state->Key_Type)) {
+            if (!Py_IS_TYPE(item, state->Key_Type)) {
                 PyErr_SetString(PyExc_TypeError, "items in first argument "
                                 "must be gpgme.Key objects");
                 goto end;
@@ -876,7 +876,7 @@ pygpgme_context_encrypt_sign(PyGpgmeContext *self, PyObject *args)
     for (i = 0; i < length; i++) {
         PyObject *item = PySequence_Fast_GET_ITEM(recp_seq, i);
 
-        if (!PyObject_TypeCheck(item, (PyTypeObject *)state->Key_Type)) {
+        if (!Py_IS_TYPE(item, state->Key_Type)) {
             PyErr_SetString(PyExc_TypeError, "items in first argument "
                             "must be gpgme.Key objects");
             goto end;
@@ -1388,7 +1388,7 @@ pygpgme_context_import_keys(PyGpgmeContext *self, PyObject *args)
     for (i = 0; i < length; i++) {
         PyObject *item = PySequence_Fast_GET_ITEM(seq, i);
 
-        if (!PyObject_TypeCheck(item, (PyTypeObject *)state->Key_Type)) {
+        if (!Py_IS_TYPE(item, state->Key_Type)) {
             PyErr_SetString(PyExc_TypeError,
                             "keys must be a sequence of key objects");
             goto out;
@@ -1582,7 +1582,7 @@ pygpgme_context_export_keys(PyGpgmeContext *self, PyObject *args)
     for (i = 0; i < length; i++) {
         PyObject *item = PySequence_Fast_GET_ITEM(seq, i);
 
-        if (!PyObject_TypeCheck(item, (PyTypeObject *)state->Key_Type)) {
+        if (!Py_IS_TYPE(item, state->Key_Type)) {
             PyErr_SetString(PyExc_TypeError,
                             "keys must be a sequence of key objects");
             goto out;
@@ -1864,7 +1864,7 @@ pygpgme_context_keylist(PyGpgmeContext *self, PyObject *args)
         return NULL;
 
     /* return a KeyIter object */
-    ret = PyObject_New(PyGpgmeKeyIter, (PyTypeObject *)state->KeyIter_Type);
+    ret = PyObject_New(PyGpgmeKeyIter, state->KeyIter_Type);
     if (!ret)
         return NULL;
     Py_INCREF(self);

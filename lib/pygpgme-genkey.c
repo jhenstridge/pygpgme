@@ -90,7 +90,7 @@ pygpgme_genkey_result(PyGpgmeModState *state, gpgme_ctx_t ctx)
     if (result == NULL)
         Py_RETURN_NONE;
 
-    self = PyObject_New(PyGpgmeGenkeyResult, (PyTypeObject *)state->GenkeyResult_Type);
+    self = PyObject_New(PyGpgmeGenkeyResult, state->GenkeyResult_Type);
     if (!self)
         return NULL;
 

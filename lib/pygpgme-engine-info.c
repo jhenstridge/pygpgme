@@ -66,7 +66,7 @@ pygpgme_engine_info_list_new(PyGpgmeModState *state, gpgme_engine_info_t info)
 
     for (; info != NULL; info = info->next) {
 	PyGpgmeEngineInfo *item = PyObject_New(PyGpgmeEngineInfo,
-					       (PyTypeObject *)state->EngineInfo_Type);
+					       state->EngineInfo_Type);
 	if (item == NULL) {
 	    Py_DECREF(list);
 	    return NULL;

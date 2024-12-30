@@ -79,7 +79,7 @@ pygpgme_newsiglist_new(PyGpgmeModState *state, gpgme_new_signature_t siglist)
     list = PyList_New(0);
     for (sig = siglist; sig != NULL; sig = sig->next) {
         PyGpgmeNewSignature *item = PyObject_New(PyGpgmeNewSignature,
-                                                 (PyTypeObject *)state->NewSignature_Type);
+                                                 state->NewSignature_Type);
         if (item == NULL) {
             Py_DECREF(list);
             return NULL;
@@ -231,7 +231,7 @@ pygpgme_siglist_new(PyGpgmeModState *state, gpgme_signature_t siglist)
     list = PyList_New(0);
     for (sig = siglist; sig != NULL; sig = sig->next) {
         PyGpgmeSignature *item = PyObject_New(PyGpgmeSignature,
-                                              (PyTypeObject *)state->Signature_Type);
+                                              state->Signature_Type);
         if (item == NULL) {
             Py_DECREF(list);
             return NULL;
@@ -394,7 +394,7 @@ pygpgme_sig_notation_list_new(PyGpgmeModState *state, gpgme_sig_notation_t notat
     list = PyList_New(0);
     for (not = notations; not != NULL; not = not->next) {
         PyGpgmeSigNotation *item = PyObject_New(PyGpgmeSigNotation,
-                                                (PyTypeObject *)state->SigNotation_Type);
+                                                state->SigNotation_Type);
         if (item == NULL) {
             Py_DECREF(list);
             return NULL;

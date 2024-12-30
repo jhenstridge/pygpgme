@@ -405,7 +405,7 @@ pygpgme_user_id_get_signatures(PyGpgmeUserId *self)
     for (sig = self->user_id->signatures; sig != NULL; sig = sig->next) {
         PyGpgmeKeySig *item;
 
-        item = PyObject_New(PyGpgmeKeySig, (PyTypeObject *)state->KeySig_Type);
+        item = PyObject_New(PyGpgmeKeySig, state->KeySig_Type);
         if (item == NULL) {
             Py_DECREF(ret);
             return NULL;
@@ -637,7 +637,7 @@ pygpgme_key_get_subkeys(PyGpgmeKey *self)
     for (subkey = self->key->subkeys; subkey != NULL; subkey = subkey->next) {
         PyGpgmeSubkey *item;
 
-        item = PyObject_New(PyGpgmeSubkey, (PyTypeObject *)state->Subkey_Type);
+        item = PyObject_New(PyGpgmeSubkey, state->Subkey_Type);
         if (item == NULL) {
             Py_DECREF(ret);
             return NULL;
@@ -669,7 +669,7 @@ pygpgme_key_get_uids(PyGpgmeKey *self)
     for (uid = self->key->uids; uid != NULL; uid = uid->next) {
         PyGpgmeUserId *item;
 
-        item = PyObject_New(PyGpgmeUserId, (PyTypeObject *)state->UserId_Type);
+        item = PyObject_New(PyGpgmeUserId, state->UserId_Type);
         if (item == NULL) {
             Py_DECREF(ret);
             return NULL;
@@ -759,7 +759,7 @@ pygpgme_key_new(PyGpgmeModState *state, gpgme_key_t key)
 {
     PyGpgmeKey *self;
 
-    self = PyObject_New(PyGpgmeKey, (PyTypeObject *)state->Key_Type);
+    self = PyObject_New(PyGpgmeKey, state->Key_Type);
     if (self == NULL)
         return NULL;
 

@@ -41,11 +41,11 @@ pygpgme_mod_exec(PyObject *mod) {
     PyModule_AddObject(mod, "GpgmeError", state->pygpgme_error);
 
 #define INIT_TYPE(type, spec) \
-    state->type##_Type = PyType_FromModuleAndSpec(mod, spec, NULL); \
+    state->type##_Type = (PyTypeObject *)PyType_FromModuleAndSpec(mod, spec, NULL); \
     if (!state->type##_Type) \
         return -1; \
     Py_INCREF(state->type##_Type); \
-    PyModule_AddObject(mod, #type, state->type##_Type)
+    PyModule_AddObject(mod, #type, (PyObject *)state->type##_Type)
 
     INIT_TYPE(Context, &pygpgme_context_spec);
     INIT_TYPE(EngineInfo, &pygpgme_engine_info_spec);

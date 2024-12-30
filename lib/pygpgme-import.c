@@ -98,7 +98,7 @@ pygpgme_import_result(PyGpgmeModState *state, gpgme_ctx_t ctx)
     if (result == NULL)
         Py_RETURN_NONE;
 
-    self = PyObject_New(PyGpgmeImportResult, (PyTypeObject *)state->ImportResult_Type);
+    self = PyObject_New(PyGpgmeImportResult, state->ImportResult_Type);
     if (!self)
         return NULL;
 

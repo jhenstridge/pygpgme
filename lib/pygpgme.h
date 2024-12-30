@@ -145,18 +145,18 @@ extern HIDDEN PyType_Spec pygpgme_import_result_spec;
 extern HIDDEN PyType_Spec pygpgme_genkey_result_spec;
 
 typedef struct {
-    PyObject *Context_Type;
-    PyObject *EngineInfo_Type;
-    PyObject *Key_Type;
-    PyObject *Subkey_Type;
-    PyObject *UserId_Type;
-    PyObject *KeySig_Type;
-    PyObject *KeyIter_Type;
-    PyObject *NewSignature_Type;
-    PyObject *Signature_Type;
-    PyObject *SigNotation_Type;
-    PyObject *ImportResult_Type;
-    PyObject *GenkeyResult_Type;
+    PyTypeObject *Context_Type;
+    PyTypeObject *EngineInfo_Type;
+    PyTypeObject *Key_Type;
+    PyTypeObject *Subkey_Type;
+    PyTypeObject *UserId_Type;
+    PyTypeObject *KeySig_Type;
+    PyTypeObject *KeyIter_Type;
+    PyTypeObject *NewSignature_Type;
+    PyTypeObject *Signature_Type;
+    PyTypeObject *SigNotation_Type;
+    PyTypeObject *ImportResult_Type;
+    PyTypeObject *GenkeyResult_Type;
 
     /* enumerations and flags */
     PyObject *DataEncoding_Type;
