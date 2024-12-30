@@ -40,27 +40,6 @@ pygpgme_mod_exec(PyObject *mod) {
     Py_INCREF(pygpgme_error);
     state->pygpgme_error = pygpgme_error;
 
-#define INIT_TYPE(type)                      \
-    if (!Py_TYPE(&type))                     \
-        Py_SET_TYPE(&type, &PyType_Type);    \
-    if (!type.tp_alloc)                      \
-        type.tp_alloc = PyType_GenericAlloc; \
-    if (!type.tp_new && type.tp_init)        \
-        type.tp_new = PyType_GenericNew;     \
-    if (PyType_Ready(&type) < 0)             \
-        return -1
-
-#define ADD_TYPE(type)                \
-    Py_INCREF(&PyGpgme ## type ## _Type); \
-    PyModule_AddObject(mod, #type, (PyObject *)&PyGpgme ## type ## _Type)
-
-    INIT_TYPE(PyGpgmeImportResult_Type);
-    INIT_TYPE(PyGpgmeGenkeyResult_Type);
-
-    ADD_TYPE(ImportResult);
-    ADD_TYPE(GenkeyResult);
-
-#undef INIT_TYPE
 #define INIT_TYPE(type, spec) \
     state->PyGpgme##type##_Type = PyType_FromModuleAndSpec(mod, spec, NULL); \
     if (!state->PyGpgme##type##_Type) \
@@ -78,6 +57,8 @@ pygpgme_mod_exec(PyObject *mod) {
     INIT_TYPE(NewSignature, &pygpgme_newsig_spec);
     INIT_TYPE(Signature, &pygpgme_sig_spec);
     INIT_TYPE(SigNotation, &pygpgme_sig_notation_spec);
+    INIT_TYPE(ImportResult, &pygpgme_import_result_spec);
+    INIT_TYPE(GenkeyResult, &pygpgme_genkey_result_spec);
 
     Py_INCREF(state->pygpgme_error);
     PyModule_AddObject(mod, "GpgmeError", state->pygpgme_error);
@@ -107,6 +88,8 @@ pygpgme_mod_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->PyGpgmeNewSignature_Type);
     Py_VISIT(state->PyGpgmeSignature_Type);
     Py_VISIT(state->PyGpgmeSigNotation_Type);
+    Py_VISIT(state->PyGpgmeImportResult_Type);
+    Py_VISIT(state->PyGpgmeGenkeyResult_Type);
     Py_VISIT(state->pygpgme_error);
     return 0;
 }
@@ -126,6 +109,8 @@ pygpgme_mod_clear(PyObject *mod)
     Py_CLEAR(state->PyGpgmeNewSignature_Type);
     Py_CLEAR(state->PyGpgmeSignature_Type);
     Py_CLEAR(state->PyGpgmeSigNotation_Type);
+    Py_CLEAR(state->PyGpgmeImportResult_Type);
+    Py_CLEAR(state->PyGpgmeGenkeyResult_Type);
     Py_CLEAR(state->pygpgme_error);
     return 0;
 }

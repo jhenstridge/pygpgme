@@ -21,7 +21,7 @@
 #include <structmember.h>
 
 static void
-pygpgme_import_dealloc(PyGpgmeImportResult *self)
+pygpgme_import_result_dealloc(PyGpgmeImportResult *self)
 {
     Py_XDECREF(self->considered);
     Py_XDECREF(self->no_user_id);
@@ -41,7 +41,7 @@ pygpgme_import_dealloc(PyGpgmeImportResult *self)
     PyObject_Del(self);
 }
 
-static PyMemberDef pygpgme_import_members[] = {
+static PyMemberDef pygpgme_import_result_members[] = {
     { "considered", T_OBJECT, offsetof(PyGpgmeImportResult, considered), READONLY},
     { "no_user_id", T_OBJECT, offsetof(PyGpgmeImportResult, no_user_id), READONLY},
     { "imported", T_OBJECT, offsetof(PyGpgmeImportResult, imported), READONLY},
@@ -66,17 +66,28 @@ static PyMemberDef pygpgme_import_members[] = {
     { NULL, 0, 0, 0}
 };
 
-PyTypeObject PyGpgmeImportResult_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "gpgme.Import",
-    sizeof(PyGpgmeImportResult),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_dealloc = (destructor)pygpgme_import_dealloc,
-    .tp_members = pygpgme_import_members,
+static PyType_Slot pygpgme_import_result_slots[] = {
+#if PY_VERSION_HEX < 0x030a0000
+    { Py_tp_init, pygpgme_no_constructor },
+#endif
+    { Py_tp_dealloc, pygpgme_import_result_dealloc },
+    { Py_tp_members, pygpgme_import_result_members },
+    { 0, NULL },
+};
+
+PyType_Spec pygpgme_import_result_spec = {
+    .name = "gpgme.ImportResult",
+    .basicsize = sizeof(PyGpgmeImportResult),
+    .flags = Py_TPFLAGS_DEFAULT
+#if PY_VERSION_HEX >= 0x030a0000
+    | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE
+#endif
+    ,
+    .slots = pygpgme_import_result_slots,
 };
 
 PyObject *
-pygpgme_import_result(gpgme_ctx_t ctx)
+pygpgme_import_result(PyGpgmeModState *state, gpgme_ctx_t ctx)
 {
     gpgme_import_result_t result;
     gpgme_import_status_t status;
@@ -87,7 +98,7 @@ pygpgme_import_result(gpgme_ctx_t ctx)
     if (result == NULL)
         Py_RETURN_NONE;
 
-    self = PyObject_New(PyGpgmeImportResult, &PyGpgmeImportResult_Type);
+    self = PyObject_New(PyGpgmeImportResult, (PyTypeObject *)state->PyGpgmeImportResult_Type);
     if (!self)
         return NULL;
 

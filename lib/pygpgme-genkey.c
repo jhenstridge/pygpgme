@@ -58,18 +58,29 @@ static const char pygpgme_genkey_result_doc[] =
     "Instances of this class are usually obtained as the return value\n"
     "of :meth:`Context.genkey`.\n";
 
-PyTypeObject PyGpgmeGenkeyResult_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "gpgme.GenkeyResult",
-    sizeof(PyGpgmeGenkeyResult),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_dealloc = (destructor)pygpgme_genkey_result_dealloc,
-    .tp_members = pygpgme_genkey_result_members,
-    .tp_doc = pygpgme_genkey_result_doc,
+static PyType_Slot pygpgme_genkey_result_slots[] = {
+#if PY_VERSION_HEX < 0x030a0000
+    { Py_tp_init, pygpgme_no_constructor },
+#endif
+    { Py_tp_dealloc, pygpgme_genkey_result_dealloc },
+    { Py_tp_members, pygpgme_genkey_result_members },
+    { Py_tp_doc, (void *)pygpgme_genkey_result_doc },
+    { 0, NULL },
+};
+
+PyType_Spec pygpgme_genkey_result_spec = {
+    .name = "gpgme.GenkeyResult",
+    .basicsize = sizeof(PyGpgmeGenkeyResult),
+    .flags = Py_TPFLAGS_DEFAULT
+#if PY_VERSION_HEX >= 0x030a0000
+    | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE
+#endif
+    ,
+    .slots = pygpgme_genkey_result_slots,
 };
 
 PyObject *
-pygpgme_genkey_result(gpgme_ctx_t ctx)
+pygpgme_genkey_result(PyGpgmeModState *state, gpgme_ctx_t ctx)
 {
     gpgme_genkey_result_t result;
     PyGpgmeGenkeyResult *self;
@@ -79,7 +90,7 @@ pygpgme_genkey_result(gpgme_ctx_t ctx)
     if (result == NULL)
         Py_RETURN_NONE;
 
-    self = PyObject_New(PyGpgmeGenkeyResult, &PyGpgmeGenkeyResult_Type);
+    self = PyObject_New(PyGpgmeGenkeyResult, (PyTypeObject *)state->PyGpgmeGenkeyResult_Type);
     if (!self)
         return NULL;
 

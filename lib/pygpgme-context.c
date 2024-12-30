@@ -1337,6 +1337,7 @@ static const char pygpgme_context_import_doc[] =
 static PyObject *
 pygpgme_context_import(PyGpgmeContext *self, PyObject *args)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *py_keydata, *result;
     gpgme_data_t keydata;
     gpgme_error_t err;
@@ -1352,7 +1353,7 @@ pygpgme_context_import(PyGpgmeContext *self, PyObject *args)
     Py_END_ALLOW_THREADS;
 
     gpgme_data_release(keydata);
-    result = pygpgme_import_result(self->ctx);
+    result = pygpgme_import_result(state, self->ctx);
     if (pygpgme_check_error(err)) {
         PyObject *err_type, *err_value, *err_traceback;
 
@@ -1410,7 +1411,7 @@ pygpgme_context_import_keys(PyGpgmeContext *self, PyObject *args)
     err = gpgme_op_import_keys(self->ctx, keys);
     Py_END_ALLOW_THREADS;
 
-    result = pygpgme_import_result(self->ctx);
+    result = pygpgme_import_result(state, self->ctx);
     if (pygpgme_check_error(err)) {
         PyObject *err_type, *err_value, *err_traceback;
 
@@ -1657,6 +1658,7 @@ static const char pygpgme_context_genkey_doc[] =
 static PyObject *
 pygpgme_context_genkey(PyGpgmeContext *self, PyObject *args)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *py_pubkey = Py_None, *py_seckey = Py_None;
     const char *parms;
     gpgme_data_t pubkey = NULL, seckey = NULL;
@@ -1680,7 +1682,7 @@ pygpgme_context_genkey(PyGpgmeContext *self, PyObject *args)
 
     gpgme_data_release(seckey);
     gpgme_data_release(pubkey);
-    result = pygpgme_genkey_result(self->ctx);
+    result = pygpgme_genkey_result(state, self->ctx);
 
     if (pygpgme_check_error(err)) {
         PyObject *err_type, *err_value, *err_traceback;
