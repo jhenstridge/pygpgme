@@ -54,15 +54,9 @@ pygpgme_mod_exec(PyObject *mod) {
     Py_INCREF(&PyGpgme ## type ## _Type); \
     PyModule_AddObject(mod, #type, (PyObject *)&PyGpgme ## type ## _Type)
 
-    INIT_TYPE(PyGpgmeNewSignature_Type);
-    INIT_TYPE(PyGpgmeSignature_Type);
-    INIT_TYPE(PyGpgmeSigNotation_Type);
     INIT_TYPE(PyGpgmeImportResult_Type);
     INIT_TYPE(PyGpgmeGenkeyResult_Type);
 
-    ADD_TYPE(NewSignature);
-    ADD_TYPE(Signature);
-    ADD_TYPE(SigNotation);
     ADD_TYPE(ImportResult);
     ADD_TYPE(GenkeyResult);
 
@@ -81,6 +75,9 @@ pygpgme_mod_exec(PyObject *mod) {
     INIT_TYPE(UserId, &pygpgme_user_id_spec);
     INIT_TYPE(KeySig, &pygpgme_key_sig_spec);
     INIT_TYPE(KeyIter, &pygpgme_keyiter_spec);
+    INIT_TYPE(NewSignature, &pygpgme_newsig_spec);
+    INIT_TYPE(Signature, &pygpgme_sig_spec);
+    INIT_TYPE(SigNotation, &pygpgme_sig_notation_spec);
 
     Py_INCREF(state->pygpgme_error);
     PyModule_AddObject(mod, "GpgmeError", state->pygpgme_error);
@@ -107,6 +104,9 @@ pygpgme_mod_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->PyGpgmeUserId_Type);
     Py_VISIT(state->PyGpgmeKeySig_Type);
     Py_VISIT(state->PyGpgmeKeyIter_Type);
+    Py_VISIT(state->PyGpgmeNewSignature_Type);
+    Py_VISIT(state->PyGpgmeSignature_Type);
+    Py_VISIT(state->PyGpgmeSigNotation_Type);
     Py_VISIT(state->pygpgme_error);
     return 0;
 }
@@ -123,6 +123,9 @@ pygpgme_mod_clear(PyObject *mod)
     Py_CLEAR(state->PyGpgmeUserId_Type);
     Py_CLEAR(state->PyGpgmeKeySig_Type);
     Py_CLEAR(state->PyGpgmeKeyIter_Type);
+    Py_CLEAR(state->PyGpgmeNewSignature_Type);
+    Py_CLEAR(state->PyGpgmeSignature_Type);
+    Py_CLEAR(state->PyGpgmeSigNotation_Type);
     Py_CLEAR(state->pygpgme_error);
     return 0;
 }

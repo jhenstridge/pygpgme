@@ -474,9 +474,10 @@ static const char pygpgme_context_sig_notations_doc[] =
 static PyObject *
 pygpgme_context_get_sig_notations(PyGpgmeContext *self)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *list, *tuple;
 
-    list = pygpgme_sig_notation_list_new(gpgme_sig_notation_get(self->ctx));
+    list = pygpgme_sig_notation_list_new(state, gpgme_sig_notation_get(self->ctx));
     tuple = PySequence_Tuple(list);
     Py_DECREF(list);
     return tuple;
@@ -485,6 +486,7 @@ pygpgme_context_get_sig_notations(PyGpgmeContext *self)
 static int
 pygpgme_context_set_sig_notations(PyGpgmeContext *self, PyObject *value)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *notations = NULL;
     int i, length, ret = -1;
     gpgme_error_t err;
@@ -505,7 +507,7 @@ pygpgme_context_set_sig_notations(PyGpgmeContext *self, PyObject *value)
         PyGpgmeSigNotation *item = (PyGpgmeSigNotation *)PySequence_Fast_GET_ITEM(notations, i);
         const char *name = NULL, *value = NULL;
 
-        if (!PyObject_IsInstance((PyObject *)item, (PyObject *)&PyGpgmeSigNotation_Type)) {
+        if (!PyObject_IsInstance((PyObject *)item, state->PyGpgmeSigNotation_Type)) {
             PyErr_SetString(PyExc_TypeError, "sig_notations items must be gpgme.SigNotation objects");
             goto end;
         }
@@ -943,7 +945,7 @@ pygpgme_context_encrypt_sign(PyGpgmeContext *self, PyObject *args)
         PyObject_SetAttrString(err_value, "invalid_signers", list);
         Py_DECREF(list);
 
-        list = pygpgme_newsiglist_new(sign_result->signatures);
+        list = pygpgme_newsiglist_new(state, sign_result->signatures);
         PyObject_SetAttrString(err_value, "signatures", list);
         Py_DECREF(list);
     error_end:
@@ -952,7 +954,7 @@ pygpgme_context_encrypt_sign(PyGpgmeContext *self, PyObject *args)
     }
 
     if (sign_result)
-        result = pygpgme_newsiglist_new(sign_result->signatures);
+        result = pygpgme_newsiglist_new(state, sign_result->signatures);
     else
         result = PyList_New(0);
 
@@ -1084,6 +1086,7 @@ static const char pygpgme_context_decrypt_verify_doc[] =
 static PyObject *
 pygpgme_context_decrypt_verify(PyGpgmeContext *self, PyObject *args)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *py_cipher, *py_plain;
     gpgme_data_t cipher, plain;
     gpgme_error_t err;
@@ -1129,7 +1132,7 @@ pygpgme_context_decrypt_verify(PyGpgmeContext *self, PyObject *args)
         if (!PyErr_GivenExceptionMatches(err_type, pygpgme_error))
             goto end;
 
-        list = pygpgme_siglist_new(result->signatures);
+        list = pygpgme_siglist_new(state, result->signatures);
         PyObject_SetAttrString(err_value, "signatures", list);
         Py_DECREF(list);
     end:
@@ -1138,7 +1141,7 @@ pygpgme_context_decrypt_verify(PyGpgmeContext *self, PyObject *args)
     }
 
     if (result)
-        return pygpgme_siglist_new(result->signatures);
+        return pygpgme_siglist_new(state, result->signatures);
     else
         return PyList_New(0);
 }
@@ -1165,6 +1168,7 @@ static const char pygpgme_context_sign_doc[] =
 static PyObject *
 pygpgme_context_sign(PyGpgmeContext *self, PyObject *args)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *py_plain, *py_sig;
     gpgme_data_t plain, sig;
     int sig_mode = GPGME_SIG_MODE_NORMAL;
@@ -1225,7 +1229,7 @@ pygpgme_context_sign(PyGpgmeContext *self, PyObject *args)
         PyObject_SetAttrString(err_value, "invalid_signers", list);
         Py_DECREF(list);
 
-        list = pygpgme_newsiglist_new(result->signatures);
+        list = pygpgme_newsiglist_new(state, result->signatures);
         PyObject_SetAttrString(err_value, "signatures", list);
         Py_DECREF(list);
     end:
@@ -1234,7 +1238,7 @@ pygpgme_context_sign(PyGpgmeContext *self, PyObject *args)
     }
 
     if (result)
-        return pygpgme_newsiglist_new(result->signatures);
+        return pygpgme_newsiglist_new(state, result->signatures);
     else
         return PyList_New(0);
 }
@@ -1265,6 +1269,7 @@ static const char pygpgme_context_verify_doc[] =
 static PyObject *
 pygpgme_context_verify(PyGpgmeContext *self, PyObject *args)
 {
+    PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *py_sig, *py_signed_text, *py_plaintext;
     gpgme_data_t sig, signed_text, plaintext;
     gpgme_error_t err;
@@ -1311,7 +1316,7 @@ pygpgme_context_verify(PyGpgmeContext *self, PyObject *args)
         if (!PyErr_GivenExceptionMatches(err_type, pygpgme_error))
             goto end;
 
-        list = pygpgme_siglist_new(result->signatures);
+        list = pygpgme_siglist_new(state, result->signatures);
         PyObject_SetAttrString(err_value, "signatures", list);
         Py_DECREF(list);
     end:
@@ -1320,7 +1325,7 @@ pygpgme_context_verify(PyGpgmeContext *self, PyObject *args)
     }
 
     if (result)
-        return pygpgme_siglist_new(result->signatures);
+        return pygpgme_siglist_new(state, result->signatures);
     else
         return PyList_New(0);
 }
