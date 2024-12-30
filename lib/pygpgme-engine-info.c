@@ -66,13 +66,13 @@ pygpgme_engine_info_list_new(PyGpgmeModState *state, gpgme_engine_info_t info)
 
     for (; info != NULL; info = info->next) {
 	PyGpgmeEngineInfo *item = PyObject_New(PyGpgmeEngineInfo,
-					       (PyTypeObject *)state->PyGpgmeEngineInfo_Type);
+					       (PyTypeObject *)state->EngineInfo_Type);
 	if (item == NULL) {
 	    Py_DECREF(list);
 	    return NULL;
 	}
 
-	item->protocol = pygpgme_enum_value_new(state->PyGpgmeProtocol_Type, info->protocol);
+	item->protocol = pygpgme_enum_value_new(state->Protocol_Type, info->protocol);
 	if (info->file_name != NULL) {
 	    item->file_name = PyUnicode_FromString(info->file_name);
 	} else {

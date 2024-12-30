@@ -41,11 +41,11 @@ pygpgme_mod_exec(PyObject *mod) {
     PyModule_AddObject(mod, "GpgmeError", state->pygpgme_error);
 
 #define INIT_TYPE(type, spec) \
-    state->PyGpgme##type##_Type = PyType_FromModuleAndSpec(mod, spec, NULL); \
-    if (!state->PyGpgme##type##_Type) \
+    state->type##_Type = PyType_FromModuleAndSpec(mod, spec, NULL); \
+    if (!state->type##_Type) \
         return -1; \
-    Py_INCREF(state->PyGpgme##type##_Type); \
-    PyModule_AddObject(mod, #type, state->PyGpgme##type##_Type)
+    Py_INCREF(state->type##_Type); \
+    PyModule_AddObject(mod, #type, state->type##_Type)
 
     INIT_TYPE(Context, &pygpgme_context_spec);
     INIT_TYPE(EngineInfo, &pygpgme_engine_info_spec);
@@ -75,36 +75,36 @@ pygpgme_mod_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     PyGpgmeModState *state = PyModule_GetState(mod);
 
-    Py_VISIT(state->PyGpgmeContext_Type);
-    Py_VISIT(state->PyGpgmeEngineInfo_Type);
-    Py_VISIT(state->PyGpgmeKey_Type);
-    Py_VISIT(state->PyGpgmeSubkey_Type);
-    Py_VISIT(state->PyGpgmeUserId_Type);
-    Py_VISIT(state->PyGpgmeKeySig_Type);
-    Py_VISIT(state->PyGpgmeKeyIter_Type);
-    Py_VISIT(state->PyGpgmeNewSignature_Type);
-    Py_VISIT(state->PyGpgmeSignature_Type);
-    Py_VISIT(state->PyGpgmeSigNotation_Type);
-    Py_VISIT(state->PyGpgmeImportResult_Type);
-    Py_VISIT(state->PyGpgmeGenkeyResult_Type);
+    Py_VISIT(state->Context_Type);
+    Py_VISIT(state->EngineInfo_Type);
+    Py_VISIT(state->Key_Type);
+    Py_VISIT(state->Subkey_Type);
+    Py_VISIT(state->UserId_Type);
+    Py_VISIT(state->KeySig_Type);
+    Py_VISIT(state->KeyIter_Type);
+    Py_VISIT(state->NewSignature_Type);
+    Py_VISIT(state->Signature_Type);
+    Py_VISIT(state->SigNotation_Type);
+    Py_VISIT(state->ImportResult_Type);
+    Py_VISIT(state->GenkeyResult_Type);
 
-    Py_VISIT(state->PyGpgmeDataEncoding_Type);
-    Py_VISIT(state->PyGpgmePubkeyAlgo_Type);
-    Py_VISIT(state->PyGpgmeHashAlgo_Type);
-    Py_VISIT(state->PyGpgmeSigMode_Type);
-    Py_VISIT(state->PyGpgmeValidity_Type);
-    Py_VISIT(state->PyGpgmeProtocol_Type);
-    Py_VISIT(state->PyGpgmeKeylistMode_Type);
-    Py_VISIT(state->PyGpgmePinentryMode_Type);
-    Py_VISIT(state->PyGpgmeExportMode_Type);
-    Py_VISIT(state->PyGpgmeSigNotationFlags_Type);
-    Py_VISIT(state->PyGpgmeStatus_Type);
-    Py_VISIT(state->PyGpgmeEncryptFlags_Type);
-    Py_VISIT(state->PyGpgmeSigsum_Type);
-    Py_VISIT(state->PyGpgmeImport_Type);
-    Py_VISIT(state->PyGpgmeDelete_Type);
-    Py_VISIT(state->PyGpgmeErrSource_Type);
-    Py_VISIT(state->PyGpgmeErrCode_Type);
+    Py_VISIT(state->DataEncoding_Type);
+    Py_VISIT(state->PubkeyAlgo_Type);
+    Py_VISIT(state->HashAlgo_Type);
+    Py_VISIT(state->SigMode_Type);
+    Py_VISIT(state->Validity_Type);
+    Py_VISIT(state->Protocol_Type);
+    Py_VISIT(state->KeylistMode_Type);
+    Py_VISIT(state->PinentryMode_Type);
+    Py_VISIT(state->ExportMode_Type);
+    Py_VISIT(state->SigNotationFlags_Type);
+    Py_VISIT(state->Status_Type);
+    Py_VISIT(state->EncryptFlags_Type);
+    Py_VISIT(state->Sigsum_Type);
+    Py_VISIT(state->Import_Type);
+    Py_VISIT(state->Delete_Type);
+    Py_VISIT(state->ErrSource_Type);
+    Py_VISIT(state->ErrCode_Type);
 
     Py_VISIT(state->pygpgme_error);
     return 0;
@@ -115,36 +115,36 @@ pygpgme_mod_clear(PyObject *mod)
 {
     PyGpgmeModState *state = PyModule_GetState(mod);
 
-    Py_CLEAR(state->PyGpgmeContext_Type);
-    Py_CLEAR(state->PyGpgmeEngineInfo_Type);
-    Py_CLEAR(state->PyGpgmeKey_Type);
-    Py_CLEAR(state->PyGpgmeSubkey_Type);
-    Py_CLEAR(state->PyGpgmeUserId_Type);
-    Py_CLEAR(state->PyGpgmeKeySig_Type);
-    Py_CLEAR(state->PyGpgmeKeyIter_Type);
-    Py_CLEAR(state->PyGpgmeNewSignature_Type);
-    Py_CLEAR(state->PyGpgmeSignature_Type);
-    Py_CLEAR(state->PyGpgmeSigNotation_Type);
-    Py_CLEAR(state->PyGpgmeImportResult_Type);
-    Py_CLEAR(state->PyGpgmeGenkeyResult_Type);
+    Py_CLEAR(state->Context_Type);
+    Py_CLEAR(state->EngineInfo_Type);
+    Py_CLEAR(state->Key_Type);
+    Py_CLEAR(state->Subkey_Type);
+    Py_CLEAR(state->UserId_Type);
+    Py_CLEAR(state->KeySig_Type);
+    Py_CLEAR(state->KeyIter_Type);
+    Py_CLEAR(state->NewSignature_Type);
+    Py_CLEAR(state->Signature_Type);
+    Py_CLEAR(state->SigNotation_Type);
+    Py_CLEAR(state->ImportResult_Type);
+    Py_CLEAR(state->GenkeyResult_Type);
 
-    Py_CLEAR(state->PyGpgmeDataEncoding_Type);
-    Py_CLEAR(state->PyGpgmePubkeyAlgo_Type);
-    Py_CLEAR(state->PyGpgmeHashAlgo_Type);
-    Py_CLEAR(state->PyGpgmeSigMode_Type);
-    Py_CLEAR(state->PyGpgmeValidity_Type);
-    Py_CLEAR(state->PyGpgmeProtocol_Type);
-    Py_CLEAR(state->PyGpgmeKeylistMode_Type);
-    Py_CLEAR(state->PyGpgmePinentryMode_Type);
-    Py_CLEAR(state->PyGpgmeExportMode_Type);
-    Py_CLEAR(state->PyGpgmeSigNotationFlags_Type);
-    Py_CLEAR(state->PyGpgmeStatus_Type);
-    Py_CLEAR(state->PyGpgmeEncryptFlags_Type);
-    Py_CLEAR(state->PyGpgmeSigsum_Type);
-    Py_CLEAR(state->PyGpgmeImport_Type);
-    Py_CLEAR(state->PyGpgmeDelete_Type);
-    Py_CLEAR(state->PyGpgmeErrSource_Type);
-    Py_CLEAR(state->PyGpgmeErrCode_Type);
+    Py_CLEAR(state->DataEncoding_Type);
+    Py_CLEAR(state->PubkeyAlgo_Type);
+    Py_CLEAR(state->HashAlgo_Type);
+    Py_CLEAR(state->SigMode_Type);
+    Py_CLEAR(state->Validity_Type);
+    Py_CLEAR(state->Protocol_Type);
+    Py_CLEAR(state->KeylistMode_Type);
+    Py_CLEAR(state->PinentryMode_Type);
+    Py_CLEAR(state->ExportMode_Type);
+    Py_CLEAR(state->SigNotationFlags_Type);
+    Py_CLEAR(state->Status_Type);
+    Py_CLEAR(state->EncryptFlags_Type);
+    Py_CLEAR(state->Sigsum_Type);
+    Py_CLEAR(state->Import_Type);
+    Py_CLEAR(state->Delete_Type);
+    Py_CLEAR(state->ErrSource_Type);
+    Py_CLEAR(state->ErrCode_Type);
 
     Py_CLEAR(state->pygpgme_error);
     return 0;

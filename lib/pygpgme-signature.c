@@ -79,14 +79,14 @@ pygpgme_newsiglist_new(PyGpgmeModState *state, gpgme_new_signature_t siglist)
     list = PyList_New(0);
     for (sig = siglist; sig != NULL; sig = sig->next) {
         PyGpgmeNewSignature *item = PyObject_New(PyGpgmeNewSignature,
-                                                 (PyTypeObject *)state->PyGpgmeNewSignature_Type);
+                                                 (PyTypeObject *)state->NewSignature_Type);
         if (item == NULL) {
             Py_DECREF(list);
             return NULL;
         }
-        item->type = pygpgme_enum_value_new(state->PyGpgmeSigMode_Type, sig->type);
-        item->pubkey_algo = pygpgme_enum_value_new(state->PyGpgmePubkeyAlgo_Type, sig->pubkey_algo);
-        item->hash_algo = pygpgme_enum_value_new(state->PyGpgmeHashAlgo_Type, sig->hash_algo);
+        item->type = pygpgme_enum_value_new(state->SigMode_Type, sig->type);
+        item->pubkey_algo = pygpgme_enum_value_new(state->PubkeyAlgo_Type, sig->pubkey_algo);
+        item->hash_algo = pygpgme_enum_value_new(state->HashAlgo_Type, sig->hash_algo);
         item->timestamp = PyLong_FromLong(sig->timestamp);
         if (sig->fpr) {
             item->fpr = PyUnicode_DecodeASCII(sig->fpr, strlen(sig->fpr),
@@ -231,12 +231,12 @@ pygpgme_siglist_new(PyGpgmeModState *state, gpgme_signature_t siglist)
     list = PyList_New(0);
     for (sig = siglist; sig != NULL; sig = sig->next) {
         PyGpgmeSignature *item = PyObject_New(PyGpgmeSignature,
-                                              (PyTypeObject *)state->PyGpgmeSignature_Type);
+                                              (PyTypeObject *)state->Signature_Type);
         if (item == NULL) {
             Py_DECREF(list);
             return NULL;
         }
-        item->summary = pygpgme_enum_value_new(state->PyGpgmeSigsum_Type, sig->summary);
+        item->summary = pygpgme_enum_value_new(state->Sigsum_Type, sig->summary);
         if (sig->fpr) {
             item->fpr = PyUnicode_DecodeASCII(sig->fpr, strlen(sig->fpr),
                                               "replace");
@@ -249,10 +249,10 @@ pygpgme_siglist_new(PyGpgmeModState *state, gpgme_signature_t siglist)
         item->timestamp = PyLong_FromLong(sig->timestamp);
         item->exp_timestamp = PyLong_FromLong(sig->exp_timestamp);
         item->wrong_key_usage = PyBool_FromLong(sig->wrong_key_usage);
-        item->validity = pygpgme_enum_value_new(state->PyGpgmeValidity_Type, sig->validity);
+        item->validity = pygpgme_enum_value_new(state->Validity_Type, sig->validity);
         item->validity_reason = pygpgme_error_object(state, sig->validity_reason);
-        item->pubkey_algo = pygpgme_enum_value_new(state->PyGpgmePubkeyAlgo_Type, sig->pubkey_algo);
-        item->hash_algo = pygpgme_enum_value_new(state->PyGpgmeHashAlgo_Type, sig->hash_algo);
+        item->pubkey_algo = pygpgme_enum_value_new(state->PubkeyAlgo_Type, sig->pubkey_algo);
+        item->hash_algo = pygpgme_enum_value_new(state->HashAlgo_Type, sig->hash_algo);
         if (PyErr_Occurred()) {
             Py_DECREF(item);
             Py_DECREF(list);
@@ -342,7 +342,7 @@ pygpgme_sig_notation_get_flags(PyGpgmeSigNotation *self)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
 
-    return pygpgme_enum_value_new(state->PyGpgmeSigNotationFlags_Type, self->flags);
+    return pygpgme_enum_value_new(state->SigNotationFlags_Type, self->flags);
 }
 
 static PyObject *
@@ -394,7 +394,7 @@ pygpgme_sig_notation_list_new(PyGpgmeModState *state, gpgme_sig_notation_t notat
     list = PyList_New(0);
     for (not = notations; not != NULL; not = not->next) {
         PyGpgmeSigNotation *item = PyObject_New(PyGpgmeSigNotation,
-                                                (PyTypeObject *)state->PyGpgmeSigNotation_Type);
+                                                (PyTypeObject *)state->SigNotation_Type);
         if (item == NULL) {
             Py_DECREF(list);
             return NULL;

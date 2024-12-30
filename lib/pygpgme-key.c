@@ -88,7 +88,7 @@ pygpgme_subkey_get_pubkey_algo(PyGpgmeSubkey *self)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
 
-    return pygpgme_enum_value_new(state->PyGpgmePubkeyAlgo_Type, self->subkey->pubkey_algo);
+    return pygpgme_enum_value_new(state->PubkeyAlgo_Type, self->subkey->pubkey_algo);
 }
 
 static PyObject *
@@ -206,7 +206,7 @@ pygpgme_key_sig_get_pubkey_algo(PyGpgmeKeySig *self)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
 
-    return pygpgme_enum_value_new(state->PyGpgmePubkeyAlgo_Type, self->key_sig->pubkey_algo);
+    return pygpgme_enum_value_new(state->PubkeyAlgo_Type, self->key_sig->pubkey_algo);
 }
 
 static PyObject *
@@ -349,7 +349,7 @@ pygpgme_user_id_get_validity(PyGpgmeUserId *self)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
 
-    return pygpgme_enum_value_new(state->PyGpgmeValidity_Type, self->user_id->validity);
+    return pygpgme_enum_value_new(state->Validity_Type, self->user_id->validity);
 }
 
 static PyObject *
@@ -405,7 +405,7 @@ pygpgme_user_id_get_signatures(PyGpgmeUserId *self)
     for (sig = self->user_id->signatures; sig != NULL; sig = sig->next) {
         PyGpgmeKeySig *item;
 
-        item = PyObject_New(PyGpgmeKeySig, (PyTypeObject *)state->PyGpgmeKeySig_Type);
+        item = PyObject_New(PyGpgmeKeySig, (PyTypeObject *)state->KeySig_Type);
         if (item == NULL) {
             Py_DECREF(ret);
             return NULL;
@@ -558,7 +558,7 @@ pygpgme_key_get_protocol(PyGpgmeKey *self)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
 
-    return pygpgme_enum_value_new(state->PyGpgmeProtocol_Type, self->key->protocol);
+    return pygpgme_enum_value_new(state->Protocol_Type, self->key->protocol);
 }
 
 static const char pygpgme_key_issuer_serial_doc[] =
@@ -616,7 +616,7 @@ pygpgme_key_get_owner_trust(PyGpgmeKey *self)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
 
-    return pygpgme_enum_value_new(state->PyGpgmeValidity_Type, self->key->owner_trust);
+    return pygpgme_enum_value_new(state->Validity_Type, self->key->owner_trust);
 }
 
 static const char pygpgme_key_subkeys_doc[] =
@@ -637,7 +637,7 @@ pygpgme_key_get_subkeys(PyGpgmeKey *self)
     for (subkey = self->key->subkeys; subkey != NULL; subkey = subkey->next) {
         PyGpgmeSubkey *item;
 
-        item = PyObject_New(PyGpgmeSubkey, (PyTypeObject *)state->PyGpgmeSubkey_Type);
+        item = PyObject_New(PyGpgmeSubkey, (PyTypeObject *)state->Subkey_Type);
         if (item == NULL) {
             Py_DECREF(ret);
             return NULL;
@@ -669,7 +669,7 @@ pygpgme_key_get_uids(PyGpgmeKey *self)
     for (uid = self->key->uids; uid != NULL; uid = uid->next) {
         PyGpgmeUserId *item;
 
-        item = PyObject_New(PyGpgmeUserId, (PyTypeObject *)state->PyGpgmeUserId_Type);
+        item = PyObject_New(PyGpgmeUserId, (PyTypeObject *)state->UserId_Type);
         if (item == NULL) {
             Py_DECREF(ret);
             return NULL;
@@ -693,7 +693,7 @@ pygpgme_key_get_keylist_mode(PyGpgmeKey *self)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
 
-    return pygpgme_enum_value_new(state->PyGpgmeKeylistMode_Type, self->key->keylist_mode);
+    return pygpgme_enum_value_new(state->KeylistMode_Type, self->key->keylist_mode);
 }
 
 static PyGetSetDef pygpgme_key_getsets[] = {
@@ -759,7 +759,7 @@ pygpgme_key_new(PyGpgmeModState *state, gpgme_key_t key)
 {
     PyGpgmeKey *self;
 
-    self = PyObject_New(PyGpgmeKey, (PyTypeObject *)state->PyGpgmeKey_Type);
+    self = PyObject_New(PyGpgmeKey, (PyTypeObject *)state->Key_Type);
     if (self == NULL)
         return NULL;
 

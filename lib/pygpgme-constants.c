@@ -72,7 +72,7 @@ pygpgme_add_constants (PyObject *mod)
     CONST(BINARY);
     CONST(BASE64);
     CONST(ARMOR);
-    state->PyGpgmeDataEncoding_Type = make_enum(mod, "IntEnum", "DataEncoding", values);
+    state->DataEncoding_Type = make_enum(mod, "IntEnum", "DataEncoding", values);
     Py_DECREF(values);
 
     /* gpgme_pubkey_algo_t */
@@ -88,7 +88,7 @@ pygpgme_add_constants (PyObject *mod)
     CONST(ECDSA);
     CONST(ECDH);
     CONST(EDDSA);
-    state->PyGpgmePubkeyAlgo_Type = make_enum(mod, "IntEnum", "PubkeyAlgo", values);
+    state->PubkeyAlgo_Type = make_enum(mod, "IntEnum", "PubkeyAlgo", values);
     Py_DECREF(values);
 
     /* gpgme_hash_algo_t */
@@ -109,7 +109,7 @@ pygpgme_add_constants (PyObject *mod)
     CONST(CRC32);
     CONST(CRC32_RFC1510);
     CONST(CRC24_RFC2440);
-    state->PyGpgmeHashAlgo_Type = make_enum(mod, "IntEnum", "HashAlgo", values);
+    state->HashAlgo_Type = make_enum(mod, "IntEnum", "HashAlgo", values);
     Py_DECREF(values);
 
     /* gpgme_sig_mode_t */
@@ -119,7 +119,7 @@ pygpgme_add_constants (PyObject *mod)
     CONST(NORMAL);
     CONST(DETACH);
     CONST(CLEAR);
-    state->PyGpgmeSigMode_Type = make_enum(mod, "IntEnum", "SigMode", values);
+    state->SigMode_Type = make_enum(mod, "IntEnum", "SigMode", values);
     Py_DECREF(values);
 
     /* gpgme_validity_t */
@@ -132,7 +132,7 @@ pygpgme_add_constants (PyObject *mod)
     CONST(MARGINAL);
     CONST(FULL);
     CONST(ULTIMATE);
-    state->PyGpgmeValidity_Type = make_enum(mod, "IntEnum", "Validity", values);
+    state->Validity_Type = make_enum(mod, "IntEnum", "Validity", values);
     Py_DECREF(values);
 
     /* gpgme_protocol_t */
@@ -148,7 +148,7 @@ pygpgme_add_constants (PyObject *mod)
     CONST(SPAWN);
     CONST(DEFAULT);
     CONST(UNKNOWN);
-    state->PyGpgmeProtocol_Type = make_enum(mod, "IntEnum", "Protocol", values);
+    state->Protocol_Type = make_enum(mod, "IntEnum", "Protocol", values);
     Py_DECREF(values);
 
     /* gpgme_keylist_mode_t */
@@ -171,7 +171,7 @@ pygpgme_add_constants (PyObject *mod)
     CONST(FORCE_EXTERN);
     CONST(LOCATE_EXTERNAL);
 #endif
-    state->PyGpgmeKeylistMode_Type = make_enum(mod, "IntFlag", "KeylistMode", values);
+    state->KeylistMode_Type = make_enum(mod, "IntFlag", "KeylistMode", values);
     Py_DECREF(values);
 
     /* gpgme_pinentry_mode_t */
@@ -183,7 +183,7 @@ pygpgme_add_constants (PyObject *mod)
     CONST(CANCEL);
     CONST(ERROR);
     CONST(LOOPBACK);
-    state->PyGpgmePinentryMode_Type = make_enum(mod, "IntEnum", "PinentryMode", values);
+    state->PinentryMode_Type = make_enum(mod, "IntEnum", "PinentryMode", values);
     Py_DECREF(values);
 
     /* gpgme_export_mode_t */
@@ -201,7 +201,7 @@ pygpgme_add_constants (PyObject *mod)
 #if GPGME_VERSION_NUMBER >= VER(1, 17, 0)
     CONST(SECRET_SUBKEY);
 #endif
-    state->PyGpgmeExportMode_Type = make_enum(mod, "IntFlag", "ExportMode", values);
+    state->ExportMode_Type = make_enum(mod, "IntFlag", "ExportMode", values);
     Py_DECREF(values);
 
     /* gpgme_sig_notation_flags_t */
@@ -210,7 +210,7 @@ pygpgme_add_constants (PyObject *mod)
 #define CONST(name) add_enum_value(values, #name, GPGME_SIG_NOTATION_##name)
     CONST(HUMAN_READABLE);
     CONST(CRITICAL);
-    state->PyGpgmeSigNotationFlags_Type = make_enum(mod, "IntFlag", "SigNotationFlags", values);
+    state->SigNotationFlags_Type = make_enum(mod, "IntFlag", "SigNotationFlags", values);
     Py_DECREF(values);
 
     /* gpgme_status_code_t */
@@ -321,7 +321,7 @@ pygpgme_add_constants (PyObject *mod)
 #if GPGME_VERSION_NUMBER >= VER(1, 15, 0)
     CONST(CANCELED_BY_USER);
 #endif
-    state->PyGpgmeStatus_Type = make_enum(mod, "IntEnum", "Status", values);
+    state->Status_Type = make_enum(mod, "IntEnum", "Status", values);
     Py_DECREF(values);
 
     /* gpgme_encrypt_flags_t */
@@ -337,7 +337,7 @@ pygpgme_add_constants (PyObject *mod)
     CONST(THROW_KEYIDS);
     CONST(WRAP);
     CONST(WANT_ADDRESS);
-    state->PyGpgmeEncryptFlags_Type = make_enum(mod, "IntFlag", "EncryptFlags", values);
+    state->EncryptFlags_Type = make_enum(mod, "IntFlag", "EncryptFlags", values);
     Py_DECREF(values);
 
     /* gpgme_sigsum_t */
@@ -356,7 +356,7 @@ pygpgme_add_constants (PyObject *mod)
     CONST(BAD_POLICY);
     CONST(SYS_ERROR);
     CONST(TOFU_CONFLICT);
-    state->PyGpgmeSigsum_Type = make_enum(mod, "IntFlag", "Sigsum", values);
+    state->Sigsum_Type = make_enum(mod, "IntFlag", "Sigsum", values);
     Py_DECREF(values);
 
     /* import status */
@@ -368,7 +368,7 @@ pygpgme_add_constants (PyObject *mod)
     CONST(SIG);
     CONST(SUBKEY);
     CONST(SECRET);
-    state->PyGpgmeImport_Type = make_enum(mod, "IntFlag", "Import", values);
+    state->Import_Type = make_enum(mod, "IntFlag", "Import", values);
     Py_DECREF(values);
 
     /* delete flags */
@@ -377,7 +377,7 @@ pygpgme_add_constants (PyObject *mod)
 #define CONST(name) add_enum_value(values, #name, GPGME_DELETE_##name)
     CONST(ALLOW_SECRET);
     CONST(FORCE);
-    state->PyGpgmeDelete_Type = make_enum(mod, "IntFlag", "Delete", values);
+    state->Delete_Type = make_enum(mod, "IntFlag", "Delete", values);
     Py_DECREF(values);
 
     /* gpg_err_source_t */
@@ -412,7 +412,7 @@ pygpgme_add_constants (PyObject *mod)
     CONST(USER_2);
     CONST(USER_3);
     CONST(USER_4);
-    state->PyGpgmeErrSource_Type = make_enum(mod, "IntEnum", "ErrSource", values);
+    state->ErrSource_Type = make_enum(mod, "IntEnum", "ErrSource", values);
     Py_DECREF(values);
 
     /* gpg_err_code_t */
@@ -1011,7 +1011,7 @@ pygpgme_add_constants (PyObject *mod)
     CONST(EWOULDBLOCK);
     CONST(EXDEV);
     CONST(EXFULL);
-    state->PyGpgmeErrCode_Type = make_enum(mod, "IntEnum", "ErrCode", values);
+    state->ErrCode_Type = make_enum(mod, "IntEnum", "ErrCode", values);
     Py_DECREF(values);
 }
 
