@@ -18,8 +18,15 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include <Python.h>
+#include <assert.h>
 #include <errno.h>
+#include "pyerrors.h"
 #include "pygpgme.h"
+
+struct pygpgme_data {
+    PyObject *fp;
+    PyGpgmeContext *ctx;
+};
 
 /* called when a Python exception is set.  Clears the exception and tries
  * to set errno appropriately. */
@@ -51,13 +58,13 @@ set_errno(void)
 static ssize_t
 read_cb(void *handle, void *buffer, size_t size)
 {
-    PyGILState_STATE state;
-    PyObject *fp = handle;
+    struct pygpgme_data *data = handle;
     PyObject *result;
     ssize_t result_size;
 
-    state = PyGILState_Ensure();
-    result = PyObject_CallMethod(fp, "read", "l", (long)size);
+    assert(data->ctx->tstate != NULL);
+    PyEval_RestoreThread(data->ctx->tstate);
+    result = PyObject_CallMethod(data->fp, "read", "l", (long)size);
     /* check for exceptions or non-string return values */
     if (result == NULL) {
         set_errno();
@@ -78,26 +85,26 @@ read_cb(void *handle, void *buffer, size_t size)
     memcpy(buffer, PyBytes_AsString(result), result_size);
     Py_DECREF(result);
  end:
-    PyGILState_Release(state);
+    data->ctx->tstate = PyEval_SaveThread();
     return result_size;
 }
 
 static ssize_t
 write_cb(void *handle, const void *buffer, size_t size)
 {
-    PyGILState_STATE state;
-    PyObject *fp = handle;
+    struct pygpgme_data *data = handle;
     PyObject *py_buffer = NULL;
     PyObject *result = NULL;
     ssize_t bytes_written = -1;
 
-    state = PyGILState_Ensure();
+    assert(data->ctx->tstate != NULL);
+    PyEval_RestoreThread(data->ctx->tstate);
     py_buffer = PyBytes_FromStringAndSize(buffer, size);
     if (py_buffer == NULL) {
         set_errno();
         goto end;
     }
-    result = PyObject_CallMethod(fp, "write", "O", py_buffer);
+    result = PyObject_CallMethod(data->fp, "write", "O", py_buffer);
     if (result == NULL) {
         set_errno();
         goto end;
@@ -106,19 +113,19 @@ write_cb(void *handle, const void *buffer, size_t size)
  end:
     Py_XDECREF(result);
     Py_XDECREF(py_buffer);
-    PyGILState_Release(state);
+    data->ctx->tstate = PyEval_SaveThread();
     return bytes_written;
 }
 
 static off_t
 seek_cb(void *handle, off_t offset, int whence)
 {
-    PyGILState_STATE state;
-    PyObject *fp = handle;
+    struct pygpgme_data *data = handle;
     PyObject *result;
 
-    state = PyGILState_Ensure();
-    result = PyObject_CallMethod(fp, "seek", "li", (long)offset, whence);
+    assert(data->ctx->tstate != NULL);
+    PyEval_RestoreThread(data->ctx->tstate);
+    result = PyObject_CallMethod(data->fp, "seek", "li", (long)offset, whence);
     if (result == NULL) {
         set_errno();
         offset = -1;
@@ -127,7 +134,7 @@ seek_cb(void *handle, off_t offset, int whence)
     Py_DECREF(result);
 
     /* now get the file location */
-    result = PyObject_CallMethod(fp, "tell", NULL);
+    result = PyObject_CallMethod(data->fp, "tell", NULL);
     if (result == NULL) {
         set_errno();
         offset = -1;
@@ -142,19 +149,19 @@ seek_cb(void *handle, off_t offset, int whence)
     offset = PyLong_AsLong(result);
     Py_DECREF(result);
  end:
-    PyGILState_Release(state);
+    data->ctx->tstate = PyEval_SaveThread();
     return offset;
 }
 
+/* Must hold thread state when releasing */
 static void
 release_cb(void *handle)
 {
-    PyGILState_STATE state;
-    PyObject *fp = handle;
+    struct pygpgme_data *data = handle;
 
-    state = PyGILState_Ensure();
-    Py_DECREF(fp);
-    PyGILState_Release(state);
+    Py_DECREF(data->fp);
+    Py_DECREF(data->ctx);
+    PyMem_Free(data);
 }
 
 static struct gpgme_data_cbs python_data_cbs = {
@@ -166,24 +173,36 @@ static struct gpgme_data_cbs python_data_cbs = {
 
 /* create a gpgme data object wrapping a Python file like object */
 int
-pygpgme_data_new(PyGpgmeModState *state, gpgme_data_t *dh, PyObject *fp)
+pygpgme_data_new(PyGpgmeModState *state, gpgme_data_t *dh, PyObject *fp,
+                 PyGpgmeContext *ctx)
 {
     gpgme_error_t error;
+    struct pygpgme_data *data;
 
     if (fp == Py_None) {
         *dh = NULL;
         return 0;
     }
 
-    error = gpgme_data_new_from_cbs(dh, &python_data_cbs, fp);
+    data = PyMem_Malloc(sizeof(struct pygpgme_data));
+    if (!data) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    data->fp = fp;
+    data->ctx = ctx;
+
+    error = gpgme_data_new_from_cbs(dh, &python_data_cbs, data);
 
     if (pygpgme_check_error(state, error)) {
         *dh = NULL;
+        PyMem_Free(data);
         return -1;
     }
 
     /* if no error, then the new gpgme_data_t object owns a reference to
      * the python object */
     Py_INCREF(fp);
+    Py_INCREF(ctx);
     return 0;
 }
