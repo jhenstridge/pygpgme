@@ -161,9 +161,12 @@ static PyMethodDef pygpgme_mod_functions[] = {
 };
 
 static PyModuleDef_Slot pygpgme_mod_slots[] = {
-    {Py_mod_exec, pygpgme_mod_exec},
+    { Py_mod_exec, pygpgme_mod_exec },
 #if PY_VERSION_HEX >= 0x030c0000
-    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    { Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED },
+#endif
+#if PY_VERSION_HEX >= 0x030d0000
+    { Py_mod_gil, Py_MOD_GIL_NOT_USED },
 #endif
     { 0, NULL },
 };
