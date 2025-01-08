@@ -29,6 +29,9 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
+dev = [
+    'interpreters-pep-734; python_version >= "3.13"'
+]
 
 docs = [
     'Sphinx',
@@ -65,6 +68,7 @@ enable = ["cpython-freethreading"]
 manylinux-x86_64-image = "manylinux_2_28"
 musllinux-x86_64-image = "musllinux_1_2"
 
+test-extras =  ["dev"]
 test-command = "python -m unittest discover -v -t {project} {project}/tests"
 
 [tool.cibuildwheel.linux]
