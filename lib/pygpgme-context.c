@@ -18,6 +18,41 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include "pygpgme.h"
+#include <assert.h>
+
+static void
+begin_allow_threads(PyGpgmeContext *self)
+{
+    PyThreadState *tstate;
+
+    tstate = PyEval_SaveThread();
+    mtx_lock(&self->mutex);
+    assert(self->tstate == NULL);
+    self->tstate = tstate;
+}
+
+static void
+end_allow_threads(PyGpgmeContext *self)
+{
+    assert(self->tstate != NULL);
+    PyEval_RestoreThread(self->tstate);
+    self->tstate = NULL;
+    mtx_unlock(&self->mutex);
+}
+
+static void
+lock_context(PyGpgmeContext *self)
+{
+    Py_BEGIN_ALLOW_THREADS;
+    mtx_lock(&self->mutex);
+    Py_END_ALLOW_THREADS;
+}
+
+static void
+unlock_context(PyGpgmeContext *self)
+{
+    mtx_unlock(&self->mutex);
+}
 
 static gpgme_error_t
 pygpgme_passphrase_cb(void *hook, const char *uid_hint,
@@ -27,17 +62,17 @@ pygpgme_passphrase_cb(void *hook, const char *uid_hint,
     PyGpgmeContext *self = hook;
     PyGpgmeModState *state;
     PyObject *ret;
-    PyGILState_STATE gil_state;
     gpgme_error_t err;
 
-    gil_state = PyGILState_Ensure();
+    assert(self->tstate != NULL);
+    PyEval_RestoreThread(self->tstate);
     state = PyType_GetModuleState(Py_TYPE(self));
     ret = PyObject_CallFunction(self->passphrase_cb, "zzii",
                                 uid_hint, passphrase_info,
                                 prev_was_bad, fd);
     err = pygpgme_check_pyerror(state);
     Py_XDECREF(ret);
-    PyGILState_Release(gil_state);
+    self->tstate = PyEval_SaveThread();
     return err;
 }
 
@@ -47,13 +82,13 @@ pygpgme_progress_cb(void *hook, const char *what, int type,
 {
     PyGpgmeContext *self = hook;
     PyObject *ret;
-    PyGILState_STATE st;
 
-    st = PyGILState_Ensure();
+    assert(self->tstate != NULL);
+    PyEval_RestoreThread(self->tstate);
     ret = PyObject_CallFunction(self->progress_cb, "ziii", what, type, current, total);
     PyErr_Clear();
     Py_XDECREF(ret);
-    PyGILState_Release(st);
+    self->tstate = PyEval_SaveThread();
 }
 
 static void
@@ -63,9 +98,23 @@ pygpgme_context_dealloc(PyGpgmeContext *self)
         gpgme_release(self->ctx);
     }
     self->ctx = NULL;
+    mtx_destroy(&self->mutex);
     Py_XDECREF(self->passphrase_cb);
     Py_XDECREF(self->progress_cb);
     PyObject_Del(self);
+}
+
+static PyObject *
+pygpgme_context_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyGpgmeContext *self;
+
+    self = (PyGpgmeContext *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        mtx_init(&self->mutex, mtx_plain);
+    }
+
+    return (PyObject *)self;
 }
 
 static int
@@ -95,8 +144,13 @@ static PyObject *
 pygpgme_context_get_protocol(PyGpgmeContext *self)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+    gpgme_protocol_t protocol;
 
-    return pygpgme_enum_value_new(state->Protocol_Type, gpgme_get_protocol(self->ctx));
+    lock_context(self);
+    protocol = gpgme_get_protocol(self->ctx);
+    unlock_context(self);
+
+    return pygpgme_enum_value_new(state->Protocol_Type, protocol);
 }
 
 static int
@@ -104,6 +158,7 @@ pygpgme_context_set_protocol(PyGpgmeContext *self, PyObject *value)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     gpgme_protocol_t protocol;
+    gpgme_error_t err;
 
     if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError, "Can not delete attribute");
@@ -114,7 +169,11 @@ pygpgme_context_set_protocol(PyGpgmeContext *self, PyObject *value)
     if (PyErr_Occurred())
         return -1;
 
-    if (pygpgme_check_error(state, gpgme_set_protocol(self->ctx, protocol)))
+    lock_context(self);
+    err = gpgme_set_protocol(self->ctx, protocol);
+    unlock_context(self);
+
+    if (pygpgme_check_error(state, err))
         return -1;
 
     return 0;
@@ -128,7 +187,13 @@ static const char pygpgme_context_armor_doc[] =
 static PyObject *
 pygpgme_context_get_armor(PyGpgmeContext *self)
 {
-    return PyBool_FromLong(gpgme_get_armor(self->ctx));
+    int armor;
+
+    lock_context(self);
+    armor = gpgme_get_armor(self->ctx);
+    unlock_context(self);
+
+    return PyBool_FromLong(armor);
 }
 
 static int
@@ -145,7 +210,10 @@ pygpgme_context_set_armor(PyGpgmeContext *self, PyObject *value)
     if (PyErr_Occurred())
         return -1;
 
+    lock_context(self);
     gpgme_set_armor(self->ctx, armor);
+    unlock_context(self);
+
     return 0;
 }
 
@@ -155,7 +223,13 @@ static const char pygpgme_context_textmode_doc[] =
 static PyObject *
 pygpgme_context_get_textmode(PyGpgmeContext *self)
 {
-    return PyBool_FromLong(gpgme_get_textmode(self->ctx));
+    int textmode;
+
+    lock_context(self);
+    textmode = gpgme_get_textmode(self->ctx);
+    unlock_context(self);
+
+    return PyBool_FromLong(textmode);
 }
 
 static int
@@ -172,7 +246,9 @@ pygpgme_context_set_textmode(PyGpgmeContext *self, PyObject *value)
     if (PyErr_Occurred())
         return -1;
 
+    lock_context(self);
     gpgme_set_textmode(self->ctx, textmode);
+    unlock_context(self);
     return 0;
 }
 
@@ -182,7 +258,13 @@ static const char pygpgme_context_offline_doc[] =
 static PyObject *
 pygpgme_context_get_offline(PyGpgmeContext *self)
 {
-    return PyBool_FromLong(gpgme_get_offline(self->ctx));
+    int offline;
+
+    lock_context(self);
+    offline = gpgme_get_offline(self->ctx);
+    unlock_context(self);
+
+    return PyBool_FromLong(offline);
 }
 
 static int
@@ -199,7 +281,10 @@ pygpgme_context_set_offline(PyGpgmeContext *self, PyObject *value)
     if (PyErr_Occurred())
         return -1;
 
+    lock_context(self);
     gpgme_set_offline(self->ctx, offline);
+    unlock_context(self);
+
     return 0;
 }
 
@@ -210,7 +295,13 @@ static const char pygpgme_context_include_certs_doc[] =
 static PyObject *
 pygpgme_context_get_include_certs(PyGpgmeContext *self)
 {
-    return PyLong_FromLong(gpgme_get_include_certs(self->ctx));
+    int nr_of_certs;
+
+    lock_context(self);
+    nr_of_certs = gpgme_get_include_certs(self->ctx);
+    unlock_context(self);
+
+    return PyLong_FromLong(nr_of_certs);
 }
 
 static int
@@ -227,7 +318,10 @@ pygpgme_context_set_include_certs(PyGpgmeContext *self, PyObject *value)
     if (PyErr_Occurred())
         return -1;
 
+    lock_context(self);
     gpgme_set_include_certs(self->ctx, nr_of_certs);
+    unlock_context(self);
+
     return 0;
 }
 
@@ -242,8 +336,13 @@ static PyObject *
 pygpgme_context_get_keylist_mode(PyGpgmeContext *self)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+    gpgme_keylist_mode_t mode;
 
-    return pygpgme_enum_value_new(state->KeylistMode_Type, gpgme_get_keylist_mode(self->ctx));
+    lock_context(self);
+    mode = gpgme_get_keylist_mode(self->ctx);
+    unlock_context(self);
+
+    return pygpgme_enum_value_new(state->KeylistMode_Type, mode);
 }
 
 static int
@@ -251,6 +350,7 @@ pygpgme_context_set_keylist_mode(PyGpgmeContext *self, PyObject *value)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     gpgme_keylist_mode_t keylist_mode;
+    gpgme_error_t err;
 
     if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError, "Can not delete attribute");
@@ -261,7 +361,11 @@ pygpgme_context_set_keylist_mode(PyGpgmeContext *self, PyObject *value)
     if (PyErr_Occurred())
         return -1;
 
-    if (pygpgme_check_error(state, gpgme_set_keylist_mode(self->ctx, keylist_mode)))
+    lock_context(self);
+    err = gpgme_set_keylist_mode(self->ctx, keylist_mode);
+    unlock_context(self);
+
+    if (pygpgme_check_error(state, err))
         return -1;
 
     return 0;
@@ -274,8 +378,13 @@ static PyObject *
 pygpgme_context_get_pinentry_mode(PyGpgmeContext *self)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
+    gpgme_pinentry_mode_t mode;
 
-    return pygpgme_enum_value_new(state->PinentryMode_Type, gpgme_get_pinentry_mode(self->ctx));
+    lock_context(self);
+    mode = gpgme_get_pinentry_mode(self->ctx);
+    unlock_context(self);
+
+    return pygpgme_enum_value_new(state->PinentryMode_Type, mode);
 }
 
 static int
@@ -283,6 +392,7 @@ pygpgme_context_set_pinentry_mode(PyGpgmeContext *self, PyObject *value)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     gpgme_pinentry_mode_t pinentry_mode;
+    gpgme_error_t err;
 
     if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError, "Can not delete attribute");
@@ -293,7 +403,11 @@ pygpgme_context_set_pinentry_mode(PyGpgmeContext *self, PyObject *value)
     if (PyErr_Occurred())
         return -1;
 
-    if (pygpgme_check_error(state, gpgme_set_pinentry_mode(self->ctx, pinentry_mode)))
+    lock_context(self);
+    err = gpgme_set_pinentry_mode(self->ctx, pinentry_mode);
+    unlock_context(self);
+
+    if (pygpgme_check_error(state, err))
         return -1;
 
     return 0;
@@ -320,15 +434,20 @@ static PyObject *
 pygpgme_context_get_passphrase_cb(PyGpgmeContext *self)
 {
     gpgme_passphrase_cb_t passphrase_cb;
+    PyObject *callback;
 
-    /* free the passphrase callback */
+    lock_context(self);
     gpgme_get_passphrase_cb(self->ctx, &passphrase_cb, NULL);
+    /* Check to make sure it is a Python callback */
     if (passphrase_cb == pygpgme_passphrase_cb) {
-        Py_INCREF(self->passphrase_cb);
-        return self->passphrase_cb;
+        callback = self->passphrase_cb;
     } else {
-        Py_RETURN_NONE;
+        callback = Py_None;
     }
+    Py_INCREF(callback);
+    unlock_context(self);
+
+    return callback;
 }
 
 static int
@@ -338,6 +457,7 @@ pygpgme_context_set_passphrase_cb(PyGpgmeContext *self, PyObject *value)
     if (value == Py_None)
         value = NULL;
 
+    lock_context(self);
     Py_CLEAR(self->passphrase_cb);
     if (value != NULL) {
         Py_INCREF(value);
@@ -346,6 +466,8 @@ pygpgme_context_set_passphrase_cb(PyGpgmeContext *self, PyObject *value)
     } else {
         gpgme_set_passphrase_cb(self->ctx, NULL, NULL);
     }
+    unlock_context(self);
+
     return 0;
 }
 
@@ -353,15 +475,20 @@ static PyObject *
 pygpgme_context_get_progress_cb(PyGpgmeContext *self)
 {
     gpgme_progress_cb_t progress_cb;
+    PyObject *callback;
 
-    /* free the progress callback */
+    lock_context(self);
     gpgme_get_progress_cb(self->ctx, &progress_cb, NULL);
+    /* Check to make sure it is a Python callback */
     if (progress_cb == pygpgme_progress_cb) {
-        Py_INCREF(self->progress_cb);
-        return self->progress_cb;
+        callback = self->progress_cb;
     } else {
-        Py_RETURN_NONE;
+        callback = Py_None;
     }
+    Py_INCREF(callback);
+    unlock_context(self);
+
+    return callback;
 }
 
 static int
@@ -371,6 +498,7 @@ pygpgme_context_set_progress_cb(PyGpgmeContext *self, PyObject *value)
     if (value == Py_None)
         value = NULL;
 
+    lock_context(self);
     Py_CLEAR(self->progress_cb);
     if (value != NULL) {
         Py_INCREF(value);
@@ -379,6 +507,8 @@ pygpgme_context_set_progress_cb(PyGpgmeContext *self, PyObject *value)
     } else {
         gpgme_set_progress_cb(self->ctx, NULL, NULL);
     }
+    unlock_context(self);
+
     return 0;
 }
 
@@ -391,10 +521,11 @@ static PyObject *
 pygpgme_context_get_signers(PyGpgmeContext *self)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
-    PyObject *list, *tuple;
+    PyObject *list, *tuple = NULL;
     gpgme_key_t key;
     int i;
 
+    lock_context(self);
     list = PyList_New(0);
     for (i = 0, key = gpgme_signers_enum(self->ctx, 0);
          key != NULL; key = gpgme_signers_enum(self->ctx, ++i)) {
@@ -404,13 +535,20 @@ pygpgme_context_get_signers(PyGpgmeContext *self)
         gpgme_key_unref(key);
         if (item == NULL) {
             Py_DECREF(list);
-            return NULL;
+            list = NULL;
+            goto end;
         }
         PyList_Append(list, item);
         Py_DECREF(item);
     }
-    tuple = PySequence_Tuple(list);
-    Py_DECREF(list);
+
+end:
+    unlock_context(self);
+
+    if (list != NULL) {
+        tuple = PySequence_Tuple(list);
+        Py_DECREF(list);
+    }
     return tuple;
 }
 
@@ -428,10 +566,10 @@ pygpgme_context_set_signers(PyGpgmeContext *self, PyObject *value)
 
     signers = PySequence_Fast(value, "signers must be a sequence of keys");
     if (!signers) {
-        ret = -1;
-        goto end;
+        return -1;
     }
 
+    lock_context(self);
     gpgme_signers_clear(self->ctx);
     length = PySequence_Fast_GET_SIZE(signers);
     for (i = 0; i < length; i++) {
@@ -447,7 +585,8 @@ pygpgme_context_set_signers(PyGpgmeContext *self, PyObject *value)
     }
 
  end:
-    Py_XDECREF(signers);
+    unlock_context(self);
+    Py_DECREF(signers);
     return ret;
 }
 
@@ -460,7 +599,10 @@ pygpgme_context_get_sig_notations(PyGpgmeContext *self)
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     PyObject *list, *tuple;
 
+    lock_context(self);
     list = pygpgme_sig_notation_list_new(state, gpgme_sig_notation_get(self->ctx));
+    unlock_context(self);
+
     tuple = PySequence_Tuple(list);
     Py_DECREF(list);
     return tuple;
@@ -476,14 +618,15 @@ pygpgme_context_set_sig_notations(PyGpgmeContext *self, PyObject *value)
 
     if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError, "Can not delete attribute");
-        goto end;
+        return -1;
     }
 
     notations = PySequence_Fast(value, "notations must be a sequence of tuples");
     if (!notations ) {
-        goto end;
+        return -1;
     }
 
+    lock_context(self);
     gpgme_sig_notation_clear(self->ctx);
     length = PySequence_Fast_GET_SIZE(notations);
     for (i = 0; i < length; i++) {
@@ -512,7 +655,8 @@ pygpgme_context_set_sig_notations(PyGpgmeContext *self, PyObject *value)
     ret = 0;
 
  end:
-    Py_XDECREF(notations);
+    unlock_context(self);
+    Py_DECREF(notations);
     return ret;
 }
 
@@ -522,12 +666,20 @@ static const char pygpgme_context_sender_doc[] =
 static PyObject *
 pygpgme_context_get_sender(PyGpgmeContext *self)
 {
-    const char *sender = gpgme_get_sender(self->ctx);
+    const char *sender;
+    PyObject *py_sender;
 
+    lock_context(self);
+    sender = gpgme_get_sender(self->ctx);
     if (sender == NULL) {
-        Py_RETURN_NONE;
+        Py_INCREF(Py_None);
+        py_sender = Py_None;
+    } else {
+        py_sender = PyUnicode_FromString(sender);
     }
-    return PyUnicode_FromString(sender);
+    unlock_context(self);
+
+    return py_sender;
 }
 
 static int
@@ -549,7 +701,10 @@ pygpgme_context_set_sender(PyGpgmeContext *self, PyObject *value)
         return -1;
     }
 
+    lock_context(self);
     err = gpgme_set_sender(self->ctx, address);
+    unlock_context(self);
+
     return pygpgme_check_error(state, err);
 }
 
@@ -617,12 +772,16 @@ pygpgme_context_set_engine_info(PyGpgmeContext *self, PyObject *args)
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     int protocol;
     const char *file_name, *home_dir;
+    gpgme_error_t err;
 
     if (!PyArg_ParseTuple(args, "izz", &protocol, &file_name, &home_dir))
         return NULL;
 
-    if (pygpgme_check_error(state, gpgme_ctx_set_engine_info(self->ctx, protocol,
-                                                             file_name, home_dir)))
+    lock_context(self);
+    err = gpgme_ctx_set_engine_info(self->ctx, protocol, file_name, home_dir);
+    unlock_context(self);
+
+    if (pygpgme_check_error(state, err))
         return NULL;
 
     Py_RETURN_NONE;
@@ -637,8 +796,13 @@ pygpgme_context_get_engine_info(PyGpgmeContext *self)
 {
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     gpgme_engine_info_t info = gpgme_ctx_get_engine_info(self->ctx);
+    PyObject *py_info;
 
-    return pygpgme_engine_info_list_new(state, info);
+    lock_context(self);
+    py_info = pygpgme_engine_info_list_new(state, info);
+    unlock_context(self);
+
+    return py_info;
 }
 
 static const char pygpgme_context_set_locale_doc[] =
@@ -651,11 +815,16 @@ pygpgme_context_set_locale(PyGpgmeContext *self, PyObject *args)
     PyGpgmeModState *state = PyType_GetModuleState(Py_TYPE(self));
     int category;
     const char *value;
+    gpgme_error_t err;
 
     if (!PyArg_ParseTuple(args, "iz", &category, &value))
         return NULL;
 
-    if (pygpgme_check_error(state, gpgme_set_locale(self->ctx, category, value)))
+    lock_context(self);
+    err = gpgme_set_locale(self->ctx, category, value);
+    unlock_context(self);
+
+    if (pygpgme_check_error(state, err))
         return NULL;
 
     Py_RETURN_NONE;
@@ -688,9 +857,9 @@ pygpgme_context_get_key(PyGpgmeContext *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s|i", &fpr, &secret))
         return NULL;
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     err = gpgme_get_key(self->ctx, fpr, &key, secret);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     if (pygpgme_check_error(state, err))
         return NULL;
@@ -799,14 +968,14 @@ pygpgme_context_encrypt(PyGpgmeContext *self, PyObject *args)
         recp[i] = NULL;
     }
 
-    if (pygpgme_data_new(state, &plain, py_plain))
+    if (pygpgme_data_new(state, &plain, py_plain, self))
         goto end;
-    if (pygpgme_data_new(state, &cipher, py_cipher))
+    if (pygpgme_data_new(state, &cipher, py_cipher, self))
         goto end;
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     err = gpgme_op_encrypt(self->ctx, recp, flags, plain, cipher);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     if (pygpgme_check_error(state, err)) {
         decode_encrypt_result(self);
@@ -820,10 +989,8 @@ pygpgme_context_encrypt(PyGpgmeContext *self, PyObject *args)
     if (recp != NULL)
         free(recp);
     Py_XDECREF(recp_seq);
-    if (plain != NULL)
-        gpgme_data_release(plain);
-    if (cipher != NULL)
-        gpgme_data_release(cipher);
+    gpgme_data_release(plain);
+    gpgme_data_release(cipher);
 
     return result;
 }
@@ -885,14 +1052,14 @@ pygpgme_context_encrypt_sign(PyGpgmeContext *self, PyObject *args)
     }
     recp[i] = NULL;
 
-    if (pygpgme_data_new(state, &plain, py_plain))
+    if (pygpgme_data_new(state, &plain, py_plain, self))
         goto end;
-    if (pygpgme_data_new(state, &cipher, py_cipher))
+    if (pygpgme_data_new(state, &cipher, py_cipher, self))
         goto end;
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     err = gpgme_op_encrypt_sign(self->ctx, recp, flags, plain, cipher);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     sign_result = gpgme_op_sign_result(self->ctx);
 
@@ -949,10 +1116,8 @@ pygpgme_context_encrypt_sign(PyGpgmeContext *self, PyObject *args)
     if (recp != NULL)
         free(recp);
     Py_XDECREF(recp_seq);
-    if (plain != NULL)
-        gpgme_data_release(plain);
-    if (cipher != NULL)
-        gpgme_data_release(cipher);
+    gpgme_data_release(plain);
+    gpgme_data_release(cipher);
 
     return result;
 }
@@ -1027,18 +1192,18 @@ pygpgme_context_decrypt(PyGpgmeContext *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OO", &py_cipher, &py_plain))
         return NULL;
 
-    if (pygpgme_data_new(state, &cipher, py_cipher)) {
+    if (pygpgme_data_new(state, &cipher, py_cipher, self)) {
         return NULL;
     }
 
-    if (pygpgme_data_new(state, &plain, py_plain)) {
+    if (pygpgme_data_new(state, &plain, py_plain, self)) {
         gpgme_data_release(cipher);
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     err = gpgme_op_decrypt(self->ctx, cipher, plain);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     gpgme_data_release(cipher);
     gpgme_data_release(plain);
@@ -1084,18 +1249,18 @@ pygpgme_context_decrypt_verify(PyGpgmeContext *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OO", &py_cipher, &py_plain))
         return NULL;
 
-    if (pygpgme_data_new(state, &cipher, py_cipher)) {
+    if (pygpgme_data_new(state, &cipher, py_cipher, self)) {
         return NULL;
     }
 
-    if (pygpgme_data_new(state, &plain, py_plain)) {
+    if (pygpgme_data_new(state, &plain, py_plain, self)) {
         gpgme_data_release(cipher);
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     err = gpgme_op_decrypt_verify(self->ctx, cipher, plain);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     gpgme_data_release(cipher);
     gpgme_data_release(plain);
@@ -1167,17 +1332,17 @@ pygpgme_context_sign(PyGpgmeContext *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OO|i", &py_plain, &py_sig, &sig_mode))
         return NULL;
 
-    if (pygpgme_data_new(state, &plain, py_plain))
+    if (pygpgme_data_new(state, &plain, py_plain, self))
         return NULL;
 
-    if (pygpgme_data_new(state, &sig, py_sig)) {
+    if (pygpgme_data_new(state, &sig, py_sig, self)) {
         gpgme_data_release(plain);
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     err = gpgme_op_sign(self->ctx, plain, sig, sig_mode);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     gpgme_data_release(plain);
     gpgme_data_release(sig);
@@ -1268,22 +1433,22 @@ pygpgme_context_verify(PyGpgmeContext *self, PyObject *args)
                           &py_plaintext))
         return NULL;
 
-    if (pygpgme_data_new(state, &sig, py_sig)) {
+    if (pygpgme_data_new(state, &sig, py_sig, self)) {
         return NULL;
     }
-    if (pygpgme_data_new(state, &signed_text, py_signed_text)) {
+    if (pygpgme_data_new(state, &signed_text, py_signed_text, self)) {
         gpgme_data_release(sig);
         return NULL;
     }
-    if (pygpgme_data_new(state, &plaintext, py_plaintext)) {
+    if (pygpgme_data_new(state, &plaintext, py_plaintext, self)) {
         gpgme_data_release(sig);
         gpgme_data_release(signed_text);
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     err = gpgme_op_verify(self->ctx, sig, signed_text, plaintext);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     gpgme_data_release(sig);
     gpgme_data_release(signed_text);
@@ -1334,12 +1499,12 @@ pygpgme_context_import(PyGpgmeContext *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O", &py_keydata))
         return NULL;
 
-    if (pygpgme_data_new(state, &keydata, py_keydata))
+    if (pygpgme_data_new(state, &keydata, py_keydata, self))
         return NULL;
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     err = gpgme_op_import(self->ctx, keydata);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     gpgme_data_release(keydata);
     result = pygpgme_import_result(state, self->ctx);
@@ -1396,9 +1561,9 @@ pygpgme_context_import_keys(PyGpgmeContext *self, PyObject *args)
         keys[i] = ((PyGpgmeKey *)item)->key;
     }
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     err = gpgme_op_import_keys(self->ctx, keys);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     result = pygpgme_import_result(state, self->ctx);
     if (pygpgme_check_error(state, err)) {
@@ -1537,15 +1702,15 @@ pygpgme_context_export(PyGpgmeContext *self, PyObject *args)
     if (parse_key_patterns(py_pattern, &patterns) < 0)
         return NULL;
 
-    if (pygpgme_data_new(state, &keydata, py_keydata)) {
+    if (pygpgme_data_new(state, &keydata, py_keydata, self)) {
         if (patterns)
             free_key_patterns(patterns);
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     err = gpgme_op_export_ext(self->ctx, (const char **)patterns, export_mode, keydata);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     if (patterns)
         free_key_patterns(patterns);
@@ -1590,12 +1755,12 @@ pygpgme_context_export_keys(PyGpgmeContext *self, PyObject *args)
         keys[i] = ((PyGpgmeKey *)item)->key;
     }
 
-    if (pygpgme_data_new(state, &keydata, py_keydata))
+    if (pygpgme_data_new(state, &keydata, py_keydata, self))
         goto out;
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     err = gpgme_op_export_keys(self->ctx, keys, export_mode, keydata);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     if (pygpgme_check_error(state, err))
         goto out;
@@ -1603,8 +1768,7 @@ pygpgme_context_export_keys(PyGpgmeContext *self, PyObject *args)
     ret = Py_None;
 
 out:
-    if (keydata != NULL)
-        gpgme_data_release(keydata);
+    gpgme_data_release(keydata);
     PyMem_Free(keys);
     Py_XDECREF(seq);
 
@@ -1658,17 +1822,17 @@ pygpgme_context_genkey(PyGpgmeContext *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "z|OO", &parms, &py_pubkey, &py_seckey))
         return NULL;
 
-    if (pygpgme_data_new(state, &pubkey, py_pubkey))
+    if (pygpgme_data_new(state, &pubkey, py_pubkey, self))
         return NULL;
 
-    if (pygpgme_data_new(state, &seckey, py_seckey)) {
+    if (pygpgme_data_new(state, &seckey, py_seckey, self)) {
         gpgme_data_release(pubkey);
         return NULL;
     }
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     err = gpgme_op_genkey(self->ctx, parms, pubkey, seckey);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     gpgme_data_release(seckey);
     gpgme_data_release(pubkey);
@@ -1710,9 +1874,9 @@ pygpgme_context_delete(PyGpgmeContext *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O!|I", state->Key_Type, &key, &flags))
         return NULL;
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     err = gpgme_op_delete_ext(self->ctx, key->key, flags);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     if (pygpgme_check_error(state, err))
         return NULL;
@@ -1728,21 +1892,20 @@ static gpgme_error_t
 pygpgme_edit_cb(void *user_data, gpgme_status_code_t status,
                 const char *args, int fd)
 {
-    struct edit_cb_data *data;
+    struct edit_cb_data *data = (struct edit_cb_data *)user_data;
     PyGpgmeModState *state;
     PyObject *py_status, *ret;
-    PyGILState_STATE gil_state;
     gpgme_error_t err;
 
-    gil_state = PyGILState_Ensure();
-    data = (struct edit_cb_data *)user_data;
+    assert(data->self->tstate != NULL);
+    PyEval_RestoreThread(data->self->tstate);
     state = PyType_GetModuleState(Py_TYPE(data->self));
     py_status = pygpgme_enum_value_new(state->Status_Type, status);
     ret = PyObject_CallFunction(data->callback, "Ozi", py_status, args, fd);
     Py_DECREF(py_status);
     err = pygpgme_check_pyerror(state);
     Py_XDECREF(ret);
-    PyGILState_Release(gil_state);
+    data->self->tstate = PyEval_SaveThread();
     return err;
 }
 
@@ -1766,15 +1929,15 @@ pygpgme_context_edit(PyGpgmeContext *self, PyObject *args)
 
     PyErr_WarnEx(PyExc_DeprecationWarning, "gpgme.Context.edit is deprecated", 1);
 
-    if (pygpgme_data_new(state, &out, py_out))
+    if (pygpgme_data_new(state, &out, py_out, self))
         return NULL;
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     data.self = self;
     data.callback = callback;
     err = gpgme_op_edit(self->ctx, key->key,
                         pygpgme_edit_cb, (void *)&data, out);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     gpgme_data_release(out);
 
@@ -1803,15 +1966,15 @@ pygpgme_context_card_edit(PyGpgmeContext *self, PyObject *args)
 
     PyErr_WarnEx(PyExc_DeprecationWarning, "gpgme.Context.card_edit is deprecated", 1);
 
-    if (pygpgme_data_new(state, &out, py_out))
+    if (pygpgme_data_new(state, &out, py_out, self))
         return NULL;
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     data.self = self;
     data.callback = callback;
     err = gpgme_op_card_edit(self->ctx, key->key,
                              pygpgme_edit_cb, (void *)&data, out);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     gpgme_data_release(out);
 
@@ -1852,10 +2015,10 @@ pygpgme_context_keylist(PyGpgmeContext *self, PyObject *args)
     if (parse_key_patterns(py_pattern, &patterns) < 0)
         return NULL;
 
-    Py_BEGIN_ALLOW_THREADS;
+    begin_allow_threads(self);
     err = gpgme_op_keylist_ext_start(self->ctx, (const char **)patterns,
                                      secret_only, 0);
-    Py_END_ALLOW_THREADS;
+    end_allow_threads(self);
 
     if (patterns)
         free_key_patterns(patterns);
@@ -1927,6 +2090,7 @@ static const char pygpgme_context_doc[] =
 
 static PyType_Slot pygpgme_context_slots[] = {
     { Py_tp_dealloc, pygpgme_context_dealloc },
+    { Py_tp_new, pygpgme_context_new },
     { Py_tp_init, pygpgme_context_init },
     { Py_tp_getset, pygpgme_context_getsets },
     { Py_tp_methods, pygpgme_context_methods },

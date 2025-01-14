@@ -22,6 +22,7 @@
 
 #define PY_SSIZE_T_CLEAN 1
 #include <Python.h>
+#include <threads.h>
 #include <gpgme.h>
 
 #define HIDDEN __attribute__((visibility("hidden")))
@@ -31,6 +32,9 @@
 typedef struct {
     PyObject_HEAD
     gpgme_ctx_t ctx;
+
+    mtx_t mutex;
+    PyThreadState *tstate;
 
     PyObject *passphrase_cb;
     PyObject *progress_cb;
@@ -191,7 +195,8 @@ HIDDEN int           pygpgme_no_constructor (PyObject *self, PyObject *args,
 HIDDEN PyObject     *pygpgme_engine_info_list_new(PyGpgmeModState *state,
                                                   gpgme_engine_info_t info);
 HIDDEN int           pygpgme_data_new       (PyGpgmeModState *state,
-                                             gpgme_data_t *dh, PyObject *fp);
+                                             gpgme_data_t *dh, PyObject *fp,
+                                             PyGpgmeContext *ctx);
 HIDDEN PyObject     *pygpgme_key_new        (PyGpgmeModState *state,
                                              gpgme_key_t key);
 HIDDEN PyObject     *pygpgme_newsiglist_new (PyGpgmeModState *state,
