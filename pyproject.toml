@@ -63,16 +63,19 @@ disallow_untyped_calls = true
 disallow_untyped_decorators = true
 
 [tool.cibuildwheel]
-enable = ["cpython-freethreading"]
-
-manylinux-x86_64-image = "manylinux_2_28"
-musllinux-x86_64-image = "musllinux_1_2"
+enable = ["cpython-freethreading", "pypy"]
 
 test-extras =  ["dev"]
 test-command = "python -m unittest discover -v -t {project} {project}/tests"
 
 [tool.cibuildwheel.linux]
 archs = ["auto64"]
+
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+musllinux-x86_64-image = "musllinux_1_2"
+musllinux-aarch64-image = "musllinux_1_2"
+
 before-all = "yum install -y gpgme-devel"
 
 [[tool.cibuildwheel.overrides]]
