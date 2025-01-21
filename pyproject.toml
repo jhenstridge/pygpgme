@@ -63,7 +63,7 @@ disallow_untyped_calls = true
 disallow_untyped_decorators = true
 
 [tool.cibuildwheel]
-enable = ["cpython-freethreading"]
+enable = ["cpython-freethreading", "pypy"]
 
 test-extras =  ["dev"]
 test-command = "python -m unittest discover -v -t {project} {project}/tests"
