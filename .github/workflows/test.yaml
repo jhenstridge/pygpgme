@@ -26,6 +26,28 @@ jobs:
           compression-level: 0
           retention-days: 3
 
+  test-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Monkeypatch brew's MacOS version
+        run: |
+          set -x
+          brew_sh=/opt/homebrew/Library/Homebrew/brew.sh
+          mv ${brew_sh} ${brew_sh}.bak
+          sed 's/\(HOMEBREW_MACOS_VERSION=\).*$/\113.0.0/' < ${brew_sh}.bak > ${brew_sh}
+
+      - uses: pypa/cibuildwheel@v2.22.0
+        env:
+          CIBW_SKIP: "cp31[012]-*"
+          MACOSX_DEPLOYMENT_TARGET: "13.0"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos
+          path: ./wheelhouse/*.whl
+          compression-level: 0
+          retention-days: 3
+
   coverage:
     runs-on: ubuntu-24.04
     steps:
