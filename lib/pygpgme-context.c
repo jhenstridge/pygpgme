@@ -26,7 +26,7 @@ begin_allow_threads(PyGpgmeContext *self)
     PyThreadState *tstate;
 
     tstate = PyEval_SaveThread();
-    mtx_lock(&self->mutex);
+    PyThread_acquire_lock(self->mutex, WAIT_LOCK);
     assert(self->tstate == NULL);
     self->tstate = tstate;
 }
@@ -37,21 +37,21 @@ end_allow_threads(PyGpgmeContext *self)
     assert(self->tstate != NULL);
     PyEval_RestoreThread(self->tstate);
     self->tstate = NULL;
-    mtx_unlock(&self->mutex);
+    PyThread_release_lock(self->mutex);
 }
 
 static void
 lock_context(PyGpgmeContext *self)
 {
     Py_BEGIN_ALLOW_THREADS;
-    mtx_lock(&self->mutex);
+    PyThread_acquire_lock(self->mutex, WAIT_LOCK);
     Py_END_ALLOW_THREADS;
 }
 
 static void
 unlock_context(PyGpgmeContext *self)
 {
-    mtx_unlock(&self->mutex);
+    PyThread_release_lock(self->mutex);
 }
 
 static gpgme_error_t
@@ -98,7 +98,7 @@ pygpgme_context_dealloc(PyGpgmeContext *self)
         gpgme_release(self->ctx);
     }
     self->ctx = NULL;
-    mtx_destroy(&self->mutex);
+    PyThread_free_lock(self->mutex);
     Py_XDECREF(self->passphrase_cb);
     Py_XDECREF(self->progress_cb);
     PyObject_Del(self);
@@ -110,8 +110,15 @@ pygpgme_context_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyGpgmeContext *self;
 
     self = (PyGpgmeContext *)type->tp_alloc(type, 0);
-    if (self != NULL) {
-        mtx_init(&self->mutex, mtx_plain);
+    if (self == NULL) {
+        return NULL;
+    }
+
+    self->mutex = PyThread_allocate_lock();
+    if (!self->mutex) {
+        PyErr_NoMemory();
+        type->tp_free(self);
+        return NULL;
     }
 
     return (PyObject *)self;

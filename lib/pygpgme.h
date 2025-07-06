@@ -22,7 +22,6 @@
 
 #define PY_SSIZE_T_CLEAN 1
 #include <Python.h>
-#include <threads.h>
 #include <gpgme.h>
 
 #define HIDDEN __attribute__((visibility("hidden")))
@@ -33,7 +32,7 @@ typedef struct {
     PyObject_HEAD
     gpgme_ctx_t ctx;
 
-    mtx_t mutex;
+    PyThread_type_lock mutex;
     PyThreadState *tstate;
 
     PyObject *passphrase_cb;
