@@ -16,7 +16,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
-      - uses: pypa/cibuildwheel@v3.0.1
+      - uses: pypa/cibuildwheel@v3.1.4
         env:
           CIBW_SKIP: "cp31[012]-* *-musllinux_*"
       - uses: actions/upload-artifact@v4
