@@ -1,10 +1,12 @@
 import unittest
 
+is_backport = False
 try:
-    import interpreters
-except ModuleNotFoundError:
+    from concurrent import interpreters
+except ImportError:
     try:
         from interpreters_backport import interpreters
+        is_backport = True
     except ModuleNotFoundError:
         interpreters = None
 
@@ -25,13 +27,15 @@ class MultipleInterpretersTestCase(GpgHomeTestCase):
         # FIXME: Passing a queue between interpreters fails if the
         # interpreter hasn't imported the _interpqueues module:
         # https://github.com/ericsnowcurrently/interpreters/issues/20
-        self.interp.exec(f"import {interpreters.queues.__name__}")
+        if is_backport:
+            self.interp.exec(f"import {interpreters.queues.__name__}")
         self.interp.prepare_main(queue=self.queue)
 
     def test_types_are_distinct(self) -> None:
         @self.interp.call
         def f() -> None:
             import gpgme
+            from __main__ import queue
 
             queue.put((
                 ('Context', id(gpgme.Context)),
