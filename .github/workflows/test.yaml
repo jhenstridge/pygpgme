@@ -19,7 +19,7 @@ jobs:
       - uses: pypa/cibuildwheel@v3.2.1
         env:
           CIBW_SKIP: "cp31[012]-* *-musllinux_*"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
@@ -65,7 +65,7 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
           lcov --summary lcov/combined.lcov | grep -v '^Reading tracefile' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: coverage
           path: ./coverage
