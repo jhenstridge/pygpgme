@@ -64,20 +64,27 @@ disallow_untyped_decorators = true
 
 [tool.cibuildwheel]
 enable = ["cpython-freethreading", "pypy"]
+archs = ["auto64"]
 
 test-extras =  ["dev"]
 test-command = "python -m unittest discover -v -t {project} {project}/tests"
 
 [tool.cibuildwheel.linux]
-archs = ["auto64"]
-
 manylinux-x86_64-image = "manylinux_2_28"
 manylinux-aarch64-image = "manylinux_2_28"
 musllinux-x86_64-image = "musllinux_1_2"
 musllinux-aarch64-image = "musllinux_1_2"
 
-before-all = "yum install -y gpgme-devel"
+before-all = "dnf install -y gpgme-devel"
 
 [[tool.cibuildwheel.overrides]]
 select = "*-musllinux*"
 before-all = "apk add gpgme-dev"
+
+[tool.cibuildwheel.macos]
+before-all = """
+export MACOSX_DEPLOYMENT_TARGET=13.0
+brew reinstall --build-from-source libunistring gettext libgpg-error libassuan
+brew install gnupg
+brew reinstall --build-from-source gpgme
+"""
