@@ -172,5 +172,11 @@ class ImportTestCase(GpgHomeTestCase):
         self.assertEqual(result.imported, 1)
 
         key = ctx.get_key('15E7CE9BF1771A4ABC550B31F540A569CB935A42')
-        result = ctx.import_keys([key])
-        self.assertTrue(isinstance(result, gpgme.ImportResult))
+        try:
+            result = ctx.import_keys([key])
+        except gpgme.GpgmeError as err:
+            # On MacOS, this raises a NO_KEYSERVER error
+            if err.code != gpgme.ErrCode.NO_KEYSERVER:
+                raise
+        else:
+            self.assertTrue(isinstance(result, gpgme.ImportResult))
